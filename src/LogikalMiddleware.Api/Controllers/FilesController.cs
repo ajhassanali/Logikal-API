@@ -198,9 +198,14 @@ public class FilesController : ControllerBase
             if (fileProject == null)
                 return NotFound(new { error = "Project not found" });
 
-            var searchTerm = !string.IsNullOrWhiteSpace(fileProject.JobNumber)
-                ? fileProject.JobNumber.Replace(" ", "").Replace("-", "")
-                : fileProject.Name;
+            // Use last 4 digits of job number for reliable Bridge cache matching
+            var searchTerm = fileProject.JobNumber;
+            if (!string.IsNullOrWhiteSpace(searchTerm))
+            {
+                var digits = new string(searchTerm.Where(char.IsDigit).ToArray());
+                if (digits.Length >= 4) searchTerm = digits.Substring(digits.Length - 4);
+            }
+            if (string.IsNullOrWhiteSpace(searchTerm)) searchTerm = fileProject.Name;
 
             var searchUrl = $"{bridgeBase}/projects/search?term={Uri.EscapeDataString(searchTerm)}";
             var searchResp = await _bridgeClient.GetStringAsync(searchUrl);

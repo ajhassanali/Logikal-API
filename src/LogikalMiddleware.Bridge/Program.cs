@@ -31,6 +31,11 @@ namespace LogikalMiddleware.Bridge
         // Project cache: built from ChildrenInfos (name, guid, jobNumber) - no project opening needed
         static List<Dictionary<string, string>> _projectCache = null;
 
+        // Cached sub-center objects to avoid re-opening (Logikal API state corruption on dispose/reopen)
+        static object _cachedSubCenterObj = null;
+        static object _cachedSubCenterResult = null;
+        static string _cachedSubCenterName = null;
+
         static void Main(string[] args)
         {
             _launcherPath = args.Length > 0 ? args[0] : _launcherPath;
@@ -901,57 +906,31 @@ namespace LogikalMiddleware.Bridge
                 var centerResult = getPC.Invoke(_loginScope, new object[] { centerInfo });
                 var centerObj = SafeGetProperty(centerResult, "CoreObject").GetValue(centerResult);
 
-                // Navigate sub-centers if filter is set
+                // Navigate sub-centers if filter is set - use cached sub-center
                 if (allowedSubCenters != null)
                 {
-                    System.Reflection.PropertyInfo containerProp = null;
-                    foreach (var iface in centerObj.GetType().GetInterfaces())
+                    foreach (var subName in allowedSubCenters)
                     {
-                        containerProp = iface.GetProperty("ProjectCenterContainer");
-                        if (containerProp != null) break;
-                    }
-                    if (containerProp != null)
-                    {
-                        var container = containerProp.GetValue(centerObj);
-                        if (container != null)
+                        Console.WriteLine("[Bridge] Searching project in sub-center: " + subName);
+                        var subObj = GetOrOpenSubCenter(centerObj, subName);
+                        if (subObj == null) continue;
+
+                        var childInfosProp = SafeGetProperty(subObj, "ChildrenInfos");
+                        var childInfos = childInfosProp != null ? childInfosProp.GetValue(subObj) as IEnumerable : null;
+                        if (childInfos != null)
                         {
-                            var subInfosProp = container.GetType().GetProperty("ChildrenInfos");
-                            var subInfos = subInfosProp != null ? subInfosProp.GetValue(container) as IEnumerable : null;
-                            if (subInfos != null)
+                            foreach (var projInfo in childInfos)
                             {
-                                foreach (var subInfo in subInfos)
+                                var guidProp = SafeGetProperty(projInfo, "Guid");
+                                if (guidProp == null) continue;
+                                var projGuid = (Guid)guidProp.GetValue(projInfo);
+                                if (projGuid == targetGuid)
                                 {
-                                    var subNameProp = subInfo.GetType().GetProperty("DirectoryName");
-                                    var subName = subNameProp != null ? subNameProp.GetValue(subInfo)?.ToString() ?? "" : "";
-                                    if (!allowedSubCenters.Contains(subName)) continue;
-
-                                    Console.WriteLine("[Bridge] Searching project in sub-center: " + subName);
-                                    var getSubChild = container.GetType().GetMethod("GetChild");
-                                    if (getSubChild == null) continue;
-
-                                    var subResult = getSubChild.Invoke(container, new object[] { subInfo });
-                                    var subObj = SafeGetProperty(subResult, "CoreObject").GetValue(subResult);
-
-                                    var childInfosProp = SafeGetProperty(subObj, "ChildrenInfos");
-                                    var childInfos = childInfosProp != null ? childInfosProp.GetValue(subObj) as IEnumerable : null;
-                                    if (childInfos != null)
-                                    {
-                                        foreach (var projInfo in childInfos)
-                                        {
-                                            var guidProp = SafeGetProperty(projInfo, "Guid");
-                                            if (guidProp == null) continue;
-                                            var projGuid = (Guid)guidProp.GetValue(projInfo);
-                                            if (projGuid == targetGuid)
-                                            {
-                                                var getChild = SafeGetMethod(subObj, "GetChild");
-                                                projectResult = getChild.Invoke(subObj, new object[] { projInfo });
-                                                var projectObj = SafeGetProperty(projectResult, "CoreObject").GetValue(projectResult);
-                                                Console.WriteLine("[Bridge] Found project in sub-center " + subName);
-                                                return projectObj;
-                                            }
-                                        }
-                                    }
-                                    try { (subResult as IDisposable)?.Dispose(); } catch { }
+                                    var getChild = SafeGetMethod(subObj, "GetChild");
+                                    projectResult = getChild.Invoke(subObj, new object[] { projInfo });
+                                    var projectObj = SafeGetProperty(projectResult, "CoreObject").GetValue(projectResult);
+                                    Console.WriteLine("[Bridge] Found project in sub-center " + subName);
+                                    return projectObj;
                                 }
                             }
                         }
@@ -1022,47 +1001,20 @@ namespace LogikalMiddleware.Bridge
                     centerResult = getPC.Invoke(_loginScope, new object[] { centerInfo });
                     var centerObj = centerResult.GetType().GetProperty("CoreObject").GetValue(centerResult);
 
-                    // If we have a sub-center filter, navigate via ProjectCenterContainer
+                    // If we have a sub-center filter, navigate via cached sub-center
                     if (allowedSubCenters != null)
                     {
-                        System.Reflection.PropertyInfo containerProp = null;
-                        foreach (var iface in centerObj.GetType().GetInterfaces())
+                        foreach (var subName in allowedSubCenters)
                         {
-                            containerProp = iface.GetProperty("ProjectCenterContainer");
-                            if (containerProp != null) break;
-                        }
-                        if (containerProp != null)
-                        {
-                            var container = containerProp.GetValue(centerObj);
-                            if (container != null)
+                            Console.WriteLine("[Bridge] Searching elevation in sub-center: " + subName);
+                            var subObj = GetOrOpenSubCenter(centerObj, subName);
+                            if (subObj == null) continue;
+
+                            var result = SearchElevationInCenter(subObj, targetGuid, disposables);
+                            if (result != null)
                             {
-                                var subInfosProp = container.GetType().GetProperty("ChildrenInfos");
-                                var subInfos = subInfosProp != null ? subInfosProp.GetValue(container) as IEnumerable : null;
-                                if (subInfos != null)
-                                {
-                                    foreach (var subInfo in subInfos)
-                                    {
-                                        var subNameProp = subInfo.GetType().GetProperty("DirectoryName");
-                                        var subName = subNameProp != null ? subNameProp.GetValue(subInfo)?.ToString() ?? "" : "";
-                                        if (!allowedSubCenters.Contains(subName)) continue;
-
-                                        Console.WriteLine("[Bridge] Searching elevation in sub-center: " + subName);
-                                        var getSubChild = container.GetType().GetMethod("GetChild");
-                                        if (getSubChild == null) continue;
-
-                                        var subResult = getSubChild.Invoke(container, new object[] { subInfo });
-                                        var subObj = subResult.GetType().GetProperty("CoreObject").GetValue(subResult);
-
-                                        var result = SearchElevationInCenter(subObj, targetGuid, disposables);
-                                        if (result != null)
-                                        {
-                                            if (subResult is IDisposable sd) disposables.Add(sd);
-                                            if (centerResult is IDisposable cd) disposables.Add(cd);
-                                            return result;
-                                        }
-                                        try { (subResult as IDisposable)?.Dispose(); } catch { }
-                                    }
-                                }
+                                // Don't dispose sub-center - it's cached
+                                return result;
                             }
                         }
                         try { (centerResult as IDisposable)?.Dispose(); } catch { }
@@ -1171,6 +1123,47 @@ namespace LogikalMiddleware.Bridge
                 }
                 return null;
             }
+        }
+
+        /// <summary>
+        /// Opens and caches a sub-center by name. Keeps it alive to avoid Logikal API state corruption.
+        /// </summary>
+        static object GetOrOpenSubCenter(object centerObj, string subCenterName)
+        {
+            if (_cachedSubCenterObj != null && _cachedSubCenterName == subCenterName)
+                return _cachedSubCenterObj;
+
+            System.Reflection.PropertyInfo containerProp = null;
+            foreach (var iface in centerObj.GetType().GetInterfaces())
+            {
+                containerProp = iface.GetProperty("ProjectCenterContainer");
+                if (containerProp != null) break;
+            }
+            if (containerProp == null) return null;
+
+            var container = containerProp.GetValue(centerObj);
+            if (container == null) return null;
+
+            var subInfosProp = container.GetType().GetProperty("ChildrenInfos");
+            var subInfos = subInfosProp != null ? subInfosProp.GetValue(container) as IEnumerable : null;
+            if (subInfos == null) return null;
+
+            foreach (var subInfo in subInfos)
+            {
+                var dirNameProp = subInfo.GetType().GetProperty("DirectoryName");
+                var dirName = dirNameProp != null ? dirNameProp.GetValue(subInfo)?.ToString() ?? "" : "";
+                if (!dirName.Equals(subCenterName, StringComparison.OrdinalIgnoreCase)) continue;
+
+                Console.WriteLine("[Bridge] Opening and caching sub-center: " + dirName);
+                var getChild = container.GetType().GetMethod("GetChild");
+                if (getChild == null) return null;
+
+                _cachedSubCenterResult = getChild.Invoke(container, new object[] { subInfo });
+                _cachedSubCenterObj = SafeGetProperty(_cachedSubCenterResult, "CoreObject").GetValue(_cachedSubCenterResult);
+                _cachedSubCenterName = subCenterName;
+                return _cachedSubCenterObj;
+            }
+            return null;
         }
 
         static object SearchElevationInCenter(object centerObj, Guid targetGuid, List<IDisposable> disposables)
