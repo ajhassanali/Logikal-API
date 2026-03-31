@@ -98,19 +98,21 @@ function App() {
     setExpandedParts(null);
   };
 
-  const loadParts = async (elevGuid: string) => {
-    if (partsData[elevGuid]) {
-      setExpandedParts(expandedParts === elevGuid ? null : elevGuid);
+  const loadParts = async (elevKey: string, positionIndex: number) => {
+    if (partsData[elevKey]) {
+      setExpandedParts(expandedParts === elevKey ? null : elevKey);
       return;
     }
-    setPartsLoading(elevGuid);
-    setExpandedParts(elevGuid);
+    setPartsLoading(elevKey);
+    setExpandedParts(elevKey);
     try {
-      const res = await fetch(`${BASE}/elevations/${elevGuid}/partslist`);
+      const folder = selectedProject?.folderPath;
+      if (!folder) throw new Error('No project selected');
+      const res = await fetch(`${BASE}/files/partslist?folder=${encodeURIComponent(folder)}&position=${positionIndex}`);
       if (!res.ok) throw new Error(`Failed: ${res.statusText}`);
       const text = await res.text();
       const tables = parsePartsListXml(text);
-      setPartsData(prev => ({ ...prev, [elevGuid]: tables }));
+      setPartsData(prev => ({ ...prev, [elevKey]: tables }));
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : 'Failed to load parts');
       setExpandedParts(null);
@@ -298,13 +300,13 @@ function App() {
 
           {elevations.length > 0 ? (
             <div className="elevations-list">
-              {elevations.map(e => (
+              {elevations.map((e, idx) => (
                 <div key={e.guid || e.positionNumber} className="elevation-row">
                   <div className="elevation-main">
                     <div className="elevation-thumb">
-                      {connected ? (
+                      {connected && selectedProject ? (
                         <img
-                          src={`${BASE}/elevations/${e.guid}/thumbnail`}
+                          src={`${BASE}/files/thumbnail?folder=${encodeURIComponent(selectedProject.folderPath)}&position=${idx}`}
                           alt={`${e.positionNumber} - ${e.name}`}
                           onError={ev => {
                             const img = ev.target as HTMLImageElement;
@@ -337,10 +339,10 @@ function App() {
                     {connected && (
                       <button
                         className="btn-parts"
-                        onClick={() => loadParts(e.guid)}
-                        disabled={partsLoading === e.guid}
+                        onClick={() => loadParts(e.guid || `pos-${idx}`, idx)}
+                        disabled={partsLoading === (e.guid || `pos-${idx}`)}
                       >
-                        {partsLoading === e.guid ? 'Loading...' : expandedParts === e.guid ? 'Hide Parts' : 'View Parts'}
+                        {partsLoading === (e.guid || `pos-${idx}`) ? 'Loading...' : expandedParts === (e.guid || `pos-${idx}`) ? 'Hide Parts' : 'View Parts'}
                       </button>
                     )}
                     {!connected && (
