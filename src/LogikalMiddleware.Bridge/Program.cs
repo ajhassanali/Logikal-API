@@ -586,6 +586,7 @@ namespace LogikalMiddleware.Bridge
                 allowedCenters = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
                 foreach (var c in _centerFilter.Split(','))
                     if (!string.IsNullOrWhiteSpace(c)) allowedCenters.Add(c.Trim());
+                Console.WriteLine("[Bridge] Searching with center filter: " + _centerFilter);
             }
 
             foreach (var centerInfo in centersInfos)
@@ -593,15 +594,6 @@ namespace LogikalMiddleware.Bridge
                 var isRecycleBinProp = centerInfo.GetType().GetProperty("IsRecycleBin");
                 if (isRecycleBinProp != null && (bool)isRecycleBinProp.GetValue(centerInfo))
                     continue;
-
-                // Skip centers not in the filter
-                if (allowedCenters != null)
-                {
-                    var dirNameProp = centerInfo.GetType().GetProperty("DirectoryName");
-                    var dirName = dirNameProp != null ? dirNameProp.GetValue(centerInfo)?.ToString() ?? "" : "";
-                    if (!allowedCenters.Contains(dirName))
-                        continue;
-                }
 
                 object centerResult = null;
                 try
@@ -616,6 +608,15 @@ namespace LogikalMiddleware.Bridge
 
                     foreach (var projInfo in childrenInfos)
                     {
+                        // Filter by center/folder name if filter is set
+                        if (allowedCenters != null)
+                        {
+                            var projNameProp = projInfo.GetType().GetProperty("Name");
+                            var projName = projNameProp != null ? projNameProp.GetValue(projInfo)?.ToString() ?? "" : "";
+                            if (!allowedCenters.Contains(projName))
+                                continue;
+                        }
+
                         object projectResult = null;
                         try
                         {

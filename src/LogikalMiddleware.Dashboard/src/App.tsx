@@ -301,27 +301,37 @@ function App() {
               {elevations.map(e => (
                 <div key={e.guid || e.positionNumber} className="elevation-row">
                   <div className="elevation-main">
-                    {connected && (
-                      <div className="elevation-thumb">
+                    <div className="elevation-thumb">
+                      {connected ? (
                         <img
                           src={`${BASE}/elevations/${e.guid}/thumbnail`}
                           alt={`${e.positionNumber} - ${e.name}`}
-                          onError={ev => { (ev.target as HTMLImageElement).style.display = 'none'; }}
+                          onError={ev => {
+                            const img = ev.target as HTMLImageElement;
+                            img.style.display = 'none';
+                            const placeholder = img.parentElement?.querySelector('.dim-placeholder') as HTMLElement;
+                            if (placeholder) placeholder.style.display = 'flex';
+                          }}
                         />
+                      ) : null}
+                      <div className="dim-placeholder" style={connected ? { display: 'none' } : undefined}>
+                        <span className="dim-w">{Math.round(e.width)}</span>
+                        <span className="dim-x">x</span>
+                        <span className="dim-h">{Math.round(e.height)}</span>
                       </div>
-                    )}
+                    </div>
                     <div className="elevation-info">
                       <div className="elevation-header">
                         <strong>{e.positionNumber}</strong>
                         <span className="elevation-name">{e.name}</span>
                         {e.state && <span className={`elevation-state state-${e.state.toLowerCase()}`}>{e.state}</span>}
+                        {e.quantity > 1 && <span className="elevation-state" style={{ background: '#e0e7ff', color: '#3730a3' }}>x{e.quantity}</span>}
                       </div>
                       <div className="elevation-details">
                         {(e.width > 0 || e.height > 0) && <span>{e.width} x {e.height} mm</span>}
                         {e.system && <span>{e.system}</span>}
                         {e.colorWindow && <span>Color: {e.colorWindow}</span>}
                         {e.area > 0 && <span>Area: {e.area} m²</span>}
-                        {e.quantity > 1 && <span>Qty: {e.quantity}</span>}
                       </div>
                     </div>
                     {connected && (
