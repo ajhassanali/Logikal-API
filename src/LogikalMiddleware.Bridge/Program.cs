@@ -265,6 +265,13 @@ namespace LogikalMiddleware.Bridge
                 return;
             }
 
+            // Thumbnail by project GUID + position number
+            if (path.StartsWith("/projects/") && path.EndsWith("/thumbnail"))
+            {
+                HandlePositionThumbnail(context, path);
+                return;
+            }
+
             string responseJson;
             int statusCode = 200;
 
@@ -291,6 +298,10 @@ namespace LogikalMiddleware.Bridge
                         if (_projectCache == null) BuildProjectCache();
                         var total = _projectCache != null ? _projectCache.Count : 0;
                         responseJson = "{\"total\":" + total + ",\"note\":\"job numbers loaded at cache build time\"}";
+                        break;
+
+                    case "/debug/hierarchy":
+                        responseJson = DebugHierarchy();
                         break;
 
                     default:
@@ -356,6 +367,103 @@ namespace LogikalMiddleware.Bridge
             context.Response.Close();
         }
 
+        /// <summary>
+        /// Handle /projects/{projectGuid}/positions/{posNr}/thumbnail
+        /// Gets thumbnail by project API GUID + position number (bridges file-system and API GUIDs).
+        /// URL format: /projects/{guid}/positions/{posNr}/thumbnail
+        /// </summary>
+        static void HandlePositionThumbnail(HttpListenerContext context, string path)
+        {
+            try
+            {
+                // Parse: /projects/{guid}/positions/{posNr}/thumbnail
+                var parts = path.Split('/');
+                // parts: ["", "projects", "{guid}", "positions", "{posNr}", "thumbnail"]
+                if (parts.Length < 6) throw new Exception("Invalid path format");
+                var projectGuid = parts[2];
+                var posNr = parts[4];
+
+                Console.WriteLine("[Bridge] Getting thumbnail by position: project=" + projectGuid + " pos=" + posNr);
+
+                if (_loginScope == null) throw new Exception("Not connected");
+
+                // Open project
+                object projectResult;
+                var projectObj = OpenProjectByGuid(projectGuid, out projectResult);
+
+                try
+                {
+                    // Find the elevation by position number
+                    var phaseInfosProp = SafeGetProperty(projectObj, "ChildrenInfos");
+                    var phaseInfos = phaseInfosProp != null ? phaseInfosProp.GetValue(projectObj) as IEnumerable : null;
+
+                    if (phaseInfos != null)
+                    {
+                        foreach (var phaseInfo in phaseInfos)
+                        {
+                            object phaseResult = null;
+                            try
+                            {
+                                var getPhaseChild = SafeGetMethod(projectObj, "GetChild");
+                                phaseResult = getPhaseChild.Invoke(projectObj, new object[] { phaseInfo });
+                                var phaseObj = SafeGetProperty(phaseResult, "CoreObject").GetValue(phaseResult);
+
+                                var elevInfosProp = SafeGetProperty(phaseObj, "ChildrenInfos");
+                                var elevInfos = elevInfosProp != null ? elevInfosProp.GetValue(phaseObj) as IEnumerable : null;
+                                if (elevInfos == null) { try { (phaseResult as IDisposable)?.Dispose(); } catch { } continue; }
+
+                                int idx = 0;
+                                foreach (var elevInfo in elevInfos)
+                                {
+                                    idx++;
+                                    var nameProp = SafeGetProperty(elevInfo, "Name");
+                                    var elevName = nameProp != null ? nameProp.GetValue(elevInfo)?.ToString() ?? "" : "";
+                                    var guidProp = SafeGetProperty(elevInfo, "Guid");
+                                    var elevGuid = guidProp != null ? ((Guid)guidProp.GetValue(elevInfo)).ToString() : "";
+
+                                    // Match by position number (index) or by name containing posNr
+                                    if (idx.ToString("D3") == posNr || idx.ToString() == posNr ||
+                                        elevName.StartsWith(posNr) || posNr == idx.ToString("D2"))
+                                    {
+                                        Console.WriteLine("[Bridge] Found elevation by position " + posNr + ": " + elevGuid + " " + elevName);
+
+                                        // Get thumbnail using the API GUID
+                                        var imageBytes = GetThumbnail(elevGuid);
+
+                                        context.Response.ContentType = "image/png";
+                                        context.Response.StatusCode = 200;
+                                        context.Response.ContentLength64 = imageBytes.Length;
+                                        context.Response.OutputStream.Write(imageBytes, 0, imageBytes.Length);
+                                        context.Response.Close();
+                                        return;
+                                    }
+                                }
+                                try { (phaseResult as IDisposable)?.Dispose(); } catch { }
+                            }
+                            catch { try { (phaseResult as IDisposable)?.Dispose(); } catch { } }
+                        }
+                    }
+
+                    throw new Exception("Position " + posNr + " not found in project " + projectGuid);
+                }
+                finally
+                {
+                    try { (projectResult as IDisposable)?.Dispose(); } catch { }
+                }
+            }
+            catch (Exception ex)
+            {
+                var errorJson = "{\"error\":\"" + EscapeJson(ex.InnerException != null ? ex.InnerException.Message : ex.Message) + "\"}";
+                var buffer = Encoding.UTF8.GetBytes(errorJson);
+                context.Response.ContentType = "application/json";
+                context.Response.StatusCode = 500;
+                context.Response.ContentLength64 = buffer.Length;
+                context.Response.OutputStream.Write(buffer, 0, buffer.Length);
+                Console.WriteLine("[Bridge] Position thumbnail error: " + ex.Message);
+            }
+            context.Response.Close();
+        }
+
         static string GetProjectCenters()
         {
             if (_loginScope == null) throw new Exception("Not connected");
@@ -397,6 +505,176 @@ namespace LogikalMiddleware.Bridge
             return sb.ToString();
         }
 
+        static string DebugHierarchy()
+        {
+            if (_loginScope == null) throw new Exception("Not connected");
+            var sb = new StringBuilder();
+            sb.AppendLine("{\"hierarchy\":[");
+
+            var centersInfosProp = _loginScope.GetType().GetProperty("ProjectCenterInfos");
+            var centersInfos = centersInfosProp.GetValue(_loginScope) as IEnumerable;
+            if (centersInfos == null) return "{\"hierarchy\":[]}";
+
+            bool firstCenter = true;
+            foreach (var centerInfo in centersInfos)
+            {
+                var isRecycleBinProp = centerInfo.GetType().GetProperty("IsRecycleBin");
+                if (isRecycleBinProp != null && (bool)isRecycleBinProp.GetValue(centerInfo))
+                    continue;
+
+                if (!firstCenter) sb.Append(",");
+                firstCenter = false;
+
+                var dirNameProp = centerInfo.GetType().GetProperty("DirectoryName");
+                var dirName = dirNameProp != null ? dirNameProp.GetValue(centerInfo)?.ToString() ?? "" : "";
+                var typeProp = centerInfo.GetType().GetProperty("Type");
+                var type = typeProp != null ? typeProp.GetValue(centerInfo) : null;
+                var typeNameProp = type != null ? type.GetType().GetProperty("Name") : null;
+                var typeName = typeNameProp != null ? typeNameProp.GetValue(type)?.ToString() ?? "" : "";
+
+                sb.Append("{\"type\":\"" + EscapeJson(typeName) + "\",\"dir\":\"" + EscapeJson(dirName) + "\",\"children\":[");
+
+                try
+                {
+                    var getPC = _loginScope.GetType().GetMethod("GetProjectCenter");
+                    var centerResult = getPC.Invoke(_loginScope, new object[] { centerInfo });
+                    var centerObj = centerResult.GetType().GetProperty("CoreObject").GetValue(centerResult);
+
+                    // Dump all properties of centerObj for debug
+                    var propNames = new List<string>();
+                    try
+                    {
+                        var allProps = centerObj.GetType().GetProperties(BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly);
+                        foreach (var p in allProps) propNames.Add(p.Name);
+                    }
+                    catch { propNames.Add("(error listing props)"); }
+
+                    // Also list interface properties
+                    var ifaceNames = new List<string>();
+                    try
+                    {
+                        foreach (var iface in centerObj.GetType().GetInterfaces())
+                            foreach (var p in iface.GetProperties())
+                                if (!ifaceNames.Contains(p.Name)) ifaceNames.Add(p.Name);
+                    }
+                    catch { }
+
+                    // Check for ProjectCenterContainer
+                    System.Reflection.PropertyInfo pcContainerProp = null;
+                    try
+                    {
+                        foreach (var iface in centerObj.GetType().GetInterfaces())
+                        {
+                            var p = iface.GetProperty("ProjectCenterContainer");
+                            if (p != null) { pcContainerProp = p; break; }
+                        }
+                        if (pcContainerProp == null)
+                            pcContainerProp = centerObj.GetType().GetProperty("ProjectCenterContainer");
+                    }
+                    catch { }
+                    string containerInfo = "null";
+                    if (pcContainerProp != null)
+                    {
+                        var pcContainer = pcContainerProp.GetValue(centerObj);
+                        if (pcContainer != null)
+                        {
+                            var subInfosProp2 = pcContainer.GetType().GetProperty("ChildrenInfos");
+                            var subInfos2 = subInfosProp2 != null ? subInfosProp2.GetValue(pcContainer) as IEnumerable : null;
+                            int subCount = 0;
+                            var subNames = new List<string>();
+                            if (subInfos2 != null)
+                            {
+                                foreach (var si in subInfos2)
+                                {
+                                    subCount++;
+                                    if (subCount <= 20)
+                                    {
+                                        // Try all possible name properties
+                                        var details = new List<string>();
+                                        details.Add("type=" + si.GetType().Name);
+                                        foreach (var prop in si.GetType().GetProperties())
+                                        {
+                                            try
+                                            {
+                                                var val = prop.GetValue(si);
+                                                if (val != null && !(val is IEnumerable && !(val is string)))
+                                                    details.Add(prop.Name + "=" + val.ToString());
+                                            }
+                                            catch { }
+                                        }
+                                        subNames.Add("{" + string.Join(", ", details) + "}");
+                                    }
+                                }
+                            }
+                            containerInfo = subCount + " sub-centers: " + string.Join(" | ", subNames);
+                        }
+                    }
+
+                    sb.Append("{\"centerObjType\":\"" + EscapeJson(centerObj.GetType().FullName) + "\",");
+                    sb.Append("\"declaredProps\":\"" + EscapeJson(string.Join(", ", propNames)) + "\",");
+                    sb.Append("\"interfaceProps\":\"" + EscapeJson(string.Join(", ", ifaceNames)) + "\",");
+                    sb.Append("\"projectCenterContainer\":\"" + EscapeJson(containerInfo) + "\",");
+
+                    var childrenInfosProp = centerObj.GetType().GetProperty("ChildrenInfos");
+                    var childrenInfos = childrenInfosProp != null ? childrenInfosProp.GetValue(centerObj) as IEnumerable : null;
+
+                    sb.Append("\"childrenCount\":");
+                    int count = 0;
+                    if (childrenInfos != null)
+                    {
+                        sb.Append("\"counting\",\"children\":[");
+                        bool firstChild = true;
+                        foreach (var child in childrenInfos)
+                        {
+                            count++;
+                            if (count <= 30)
+                            {
+                                if (!firstChild) sb.Append(",");
+                                firstChild = false;
+
+                                var nameProp = child.GetType().GetProperty("Name");
+                                var guidProp = child.GetType().GetProperty("Guid");
+                                var modProp = child.GetType().GetProperty("ModificationDate");
+                                var descProp = child.GetType().GetProperty("Description");
+
+                                var name = nameProp != null ? nameProp.GetValue(child)?.ToString() ?? "" : "";
+                                var guid = guidProp != null ? guidProp.GetValue(child)?.ToString() ?? "" : "";
+                                var mod = modProp != null ? modProp.GetValue(child)?.ToString() ?? "" : "";
+                                var desc = descProp != null ? descProp.GetValue(child)?.ToString() ?? "" : "";
+                                var childType = child.GetType().Name;
+
+                                // Check for sub-children
+                                var subChildrenProp = child.GetType().GetProperty("ChildrenInfos");
+                                var hasSubChildren = subChildrenProp != null;
+
+                                sb.Append("{\"name\":\"" + EscapeJson(name) + "\",\"guid\":\"" + EscapeJson(guid) +
+                                    "\",\"mod\":\"" + EscapeJson(mod) + "\",\"desc\":\"" + EscapeJson(desc) +
+                                    "\",\"clrType\":\"" + EscapeJson(childType) +
+                                    "\",\"hasChildrenInfos\":" + (hasSubChildren ? "true" : "false") + "}");
+                            }
+                        }
+                        sb.Append("],\"totalChildren\":" + count);
+                    }
+                    else
+                    {
+                        sb.Append("0");
+                    }
+                    sb.Append("}");
+
+                    try { (centerResult as IDisposable)?.Dispose(); } catch { }
+                }
+                catch (Exception ex)
+                {
+                    sb.Append("{\"error\":\"" + EscapeJson(ex.Message) + "\"}");
+                }
+
+                sb.Append("]}");
+            }
+
+            sb.Append("]}");
+            return sb.ToString();
+        }
+
         static string SearchProjects(string searchTerm)
         {
             if (_loginScope == null) throw new Exception("Not connected");
@@ -435,7 +713,15 @@ namespace LogikalMiddleware.Bridge
         {
             Console.WriteLine("[Bridge] Building project cache...");
             var cache = new List<Dictionary<string, string>>();
-            var cutoff = DateTime.Now.AddMonths(-12);
+
+            // Parse center filter
+            HashSet<string> allowedSubCenters = null;
+            if (!string.IsNullOrWhiteSpace(_centerFilter))
+            {
+                allowedSubCenters = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+                foreach (var c in _centerFilter.Split(','))
+                    if (!string.IsNullOrWhiteSpace(c)) allowedSubCenters.Add(c.Trim());
+            }
 
             var centersInfosProp = _loginScope.GetType().GetProperty("ProjectCenterInfos");
             var centersInfos = centersInfosProp.GetValue(_loginScope) as IEnumerable;
@@ -462,6 +748,79 @@ namespace LogikalMiddleware.Bridge
                     var centerResult = getPC.Invoke(_loginScope, new object[] { centerInfo });
                     var centerObj = centerResult.GetType().GetProperty("CoreObject").GetValue(centerResult);
 
+                    // Navigate into sub-centers via ProjectCenterContainer
+                    // Use interface to avoid ambiguous match
+                    System.Reflection.PropertyInfo containerProp = null;
+                    foreach (var iface in centerObj.GetType().GetInterfaces())
+                    {
+                        containerProp = iface.GetProperty("ProjectCenterContainer");
+                        if (containerProp != null) break;
+                    }
+                    if (containerProp != null && allowedSubCenters != null)
+                    {
+                        var container = containerProp.GetValue(centerObj);
+                        if (container != null)
+                        {
+                            var subInfosProp = container.GetType().GetProperty("ChildrenInfos");
+                            var subInfos = subInfosProp != null ? subInfosProp.GetValue(container) as IEnumerable : null;
+                            if (subInfos != null)
+                            {
+                                Console.WriteLine("[Bridge] Found ProjectCenterContainer, scanning sub-centers...");
+                                foreach (var subInfo in subInfos)
+                                {
+                                    var subNameProp = subInfo.GetType().GetProperty("DirectoryName");
+                                    var subName = subNameProp != null ? subNameProp.GetValue(subInfo)?.ToString() ?? "" : "";
+
+                                    if (!allowedSubCenters.Contains(subName))
+                                        continue;
+
+                                    Console.WriteLine("[Bridge] Opening sub-center: " + subName);
+                                    try
+                                    {
+                                        var getChild = container.GetType().GetMethod("GetChild");
+                                        if (getChild == null) { Console.WriteLine("[Bridge] GetChild method not found on container"); continue; }
+                                        Console.WriteLine("[Bridge] GetChild method found, invoking...");
+
+                                        var subResult = getChild.Invoke(container, new object[] { subInfo });
+                                        Console.WriteLine("[Bridge] GetChild returned: " + (subResult != null ? subResult.GetType().FullName : "null"));
+
+                                        var coreObjProp = subResult.GetType().GetProperty("CoreObject");
+                                        if (coreObjProp == null) { Console.WriteLine("[Bridge] No CoreObject property on result"); continue; }
+
+                                        var subObj = coreObjProp.GetValue(subResult);
+                                        Console.WriteLine("[Bridge] CoreObject type: " + (subObj != null ? subObj.GetType().FullName : "null"));
+
+                                        // Get projects from this sub-center
+                                        var projInfosProp = subObj.GetType().GetProperty("ChildrenInfos");
+                                        var projInfos = projInfosProp != null ? projInfosProp.GetValue(subObj) as IEnumerable : null;
+                                        Console.WriteLine("[Bridge] ChildrenInfos: " + (projInfos != null ? "found" : "null"));
+
+                                        if (projInfos != null)
+                                        {
+                                            foreach (var projectInfo in projInfos)
+                                            {
+                                                AddProjectToCache(cache, projectInfo);
+                                            }
+                                        }
+
+                                        Console.WriteLine("[Bridge] Sub-center " + subName + ": " + cache.Count + " projects so far");
+                                        try { (subResult as IDisposable)?.Dispose(); } catch { }
+                                    }
+                                    catch (Exception subEx)
+                                    {
+                                        Console.WriteLine("[Bridge] Error opening sub-center " + subName + ": " + subEx.Message);
+                                        if (subEx.InnerException != null)
+                                            Console.WriteLine("[Bridge] Inner: " + subEx.InnerException.Message);
+                                    }
+                                }
+
+                                try { (centerResult as IDisposable)?.Dispose(); } catch { }
+                                continue; // Skip the default ChildrenInfos path
+                            }
+                        }
+                    }
+
+                    // Fallback: get projects directly from center (when no filter or no container)
                     var childrenInfosProp = centerObj.GetType().GetProperty("ChildrenInfos");
                     var childrenInfos = childrenInfosProp != null ? childrenInfosProp.GetValue(centerObj) as IEnumerable : null;
 
@@ -469,33 +828,7 @@ namespace LogikalMiddleware.Bridge
                     {
                         foreach (var projectInfo in childrenInfos)
                         {
-                            var modDateProp = projectInfo.GetType().GetProperty("ModificationDate");
-                            if (modDateProp != null)
-                            {
-                                var modDate = modDateProp.GetValue(projectInfo);
-                                if (modDate is DateTime dt && dt < cutoff)
-                                    continue;
-                            }
-
-                            var nameProp = projectInfo.GetType().GetProperty("Name");
-                            var descProp = projectInfo.GetType().GetProperty("Description");
-                            var guidProp = projectInfo.GetType().GetProperty("Guid");
-
-                            var name = nameProp != null ? nameProp.GetValue(projectInfo)?.ToString() ?? "" : "";
-                            var desc = descProp != null ? descProp.GetValue(projectInfo)?.ToString() : null;
-                            var guid = guidProp != null ? ((Guid)guidProp.GetValue(projectInfo)).ToString() : "";
-
-                            // Read job number directly from the info object
-                            var jnProp = projectInfo.GetType().GetProperty("JobNumber");
-                            var jobNumber = jnProp != null ? jnProp.GetValue(projectInfo)?.ToString() : null;
-
-                            cache.Add(new Dictionary<string, string>
-                            {
-                                { "guid", guid },
-                                { "name", name },
-                                { "description", desc },
-                                { "jobNumber", jobNumber }
-                            });
+                            AddProjectToCache(cache, projectInfo);
                         }
                     }
 
@@ -510,7 +843,28 @@ namespace LogikalMiddleware.Bridge
             }
 
             _projectCache = cache;
-            Console.WriteLine("[Bridge] Project cache built: " + cache.Count + " projects (last 12 months)");
+            Console.WriteLine("[Bridge] Project cache built: " + cache.Count + " projects");
+        }
+
+        static void AddProjectToCache(List<Dictionary<string, string>> cache, object projectInfo)
+        {
+            var nameProp = projectInfo.GetType().GetProperty("Name");
+            var descProp = projectInfo.GetType().GetProperty("Description");
+            var guidProp = projectInfo.GetType().GetProperty("Guid");
+            var jnProp = projectInfo.GetType().GetProperty("JobNumber");
+
+            var name = nameProp != null ? nameProp.GetValue(projectInfo)?.ToString() ?? "" : "";
+            var desc = descProp != null ? descProp.GetValue(projectInfo)?.ToString() : null;
+            var guid = guidProp != null ? ((Guid)guidProp.GetValue(projectInfo)).ToString() : "";
+            var jobNumber = jnProp != null ? jnProp.GetValue(projectInfo)?.ToString() : null;
+
+            cache.Add(new Dictionary<string, string>
+            {
+                { "guid", guid },
+                { "name", name },
+                { "description", desc },
+                { "jobNumber", jobNumber }
+            });
         }
 
         /// <summary>
@@ -522,6 +876,16 @@ namespace LogikalMiddleware.Bridge
         {
             if (_loginScope == null) throw new Exception("Not connected");
             var targetGuid = new Guid(guidStr);
+            Console.WriteLine("[Bridge] OpenProjectByGuid: " + guidStr);
+
+            // Parse sub-center filter
+            HashSet<string> allowedSubCenters = null;
+            if (!string.IsNullOrWhiteSpace(_centerFilter))
+            {
+                allowedSubCenters = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+                foreach (var c in _centerFilter.Split(','))
+                    if (!string.IsNullOrWhiteSpace(c)) allowedSubCenters.Add(c.Trim());
+            }
 
             var centersInfosProp = _loginScope.GetType().GetProperty("ProjectCenterInfos");
             var centersInfos = centersInfosProp.GetValue(_loginScope) as IEnumerable;
@@ -535,30 +899,86 @@ namespace LogikalMiddleware.Bridge
 
                 var getPC = _loginScope.GetType().GetMethod("GetProjectCenter");
                 var centerResult = getPC.Invoke(_loginScope, new object[] { centerInfo });
-                var centerObj = centerResult.GetType().GetProperty("CoreObject").GetValue(centerResult);
+                var centerObj = SafeGetProperty(centerResult, "CoreObject").GetValue(centerResult);
 
-                var childrenInfosProp = centerObj.GetType().GetProperty("ChildrenInfos");
-                var childrenInfos = childrenInfosProp != null ? childrenInfosProp.GetValue(centerObj) as IEnumerable : null;
-
-                if (childrenInfos != null)
+                // Navigate sub-centers if filter is set
+                if (allowedSubCenters != null)
                 {
-                    foreach (var projInfo in childrenInfos)
+                    System.Reflection.PropertyInfo containerProp = null;
+                    foreach (var iface in centerObj.GetType().GetInterfaces())
                     {
-                        var guidProp = projInfo.GetType().GetProperty("Guid");
+                        containerProp = iface.GetProperty("ProjectCenterContainer");
+                        if (containerProp != null) break;
+                    }
+                    if (containerProp != null)
+                    {
+                        var container = containerProp.GetValue(centerObj);
+                        if (container != null)
+                        {
+                            var subInfosProp = container.GetType().GetProperty("ChildrenInfos");
+                            var subInfos = subInfosProp != null ? subInfosProp.GetValue(container) as IEnumerable : null;
+                            if (subInfos != null)
+                            {
+                                foreach (var subInfo in subInfos)
+                                {
+                                    var subNameProp = subInfo.GetType().GetProperty("DirectoryName");
+                                    var subName = subNameProp != null ? subNameProp.GetValue(subInfo)?.ToString() ?? "" : "";
+                                    if (!allowedSubCenters.Contains(subName)) continue;
+
+                                    Console.WriteLine("[Bridge] Searching project in sub-center: " + subName);
+                                    var getSubChild = container.GetType().GetMethod("GetChild");
+                                    if (getSubChild == null) continue;
+
+                                    var subResult = getSubChild.Invoke(container, new object[] { subInfo });
+                                    var subObj = SafeGetProperty(subResult, "CoreObject").GetValue(subResult);
+
+                                    var childInfosProp = SafeGetProperty(subObj, "ChildrenInfos");
+                                    var childInfos = childInfosProp != null ? childInfosProp.GetValue(subObj) as IEnumerable : null;
+                                    if (childInfos != null)
+                                    {
+                                        foreach (var projInfo in childInfos)
+                                        {
+                                            var guidProp = SafeGetProperty(projInfo, "Guid");
+                                            if (guidProp == null) continue;
+                                            var projGuid = (Guid)guidProp.GetValue(projInfo);
+                                            if (projGuid == targetGuid)
+                                            {
+                                                var getChild = SafeGetMethod(subObj, "GetChild");
+                                                projectResult = getChild.Invoke(subObj, new object[] { projInfo });
+                                                var projectObj = SafeGetProperty(projectResult, "CoreObject").GetValue(projectResult);
+                                                Console.WriteLine("[Bridge] Found project in sub-center " + subName);
+                                                return projectObj;
+                                            }
+                                        }
+                                    }
+                                    try { (subResult as IDisposable)?.Dispose(); } catch { }
+                                }
+                            }
+                        }
+                    }
+                    try { (centerResult as IDisposable)?.Dispose(); } catch { }
+                    continue;
+                }
+
+                // No filter: search directly
+                var childrenInfosProp2 = SafeGetProperty(centerObj, "ChildrenInfos");
+                var childrenInfos2 = childrenInfosProp2 != null ? childrenInfosProp2.GetValue(centerObj) as IEnumerable : null;
+                if (childrenInfos2 != null)
+                {
+                    foreach (var projInfo in childrenInfos2)
+                    {
+                        var guidProp = SafeGetProperty(projInfo, "Guid");
                         if (guidProp == null) continue;
                         var projGuid = (Guid)guidProp.GetValue(projInfo);
-
                         if (projGuid == targetGuid)
                         {
-                            // Found it - open the project
-                            var getChild = centerObj.GetType().GetMethod("GetChild");
+                            var getChild = SafeGetMethod(centerObj, "GetChild");
                             projectResult = getChild.Invoke(centerObj, new object[] { projInfo });
-                            var projectObj = projectResult.GetType().GetProperty("CoreObject").GetValue(projectResult);
+                            var projectObj = SafeGetProperty(projectResult, "CoreObject").GetValue(projectResult);
                             return projectObj;
                         }
                     }
                 }
-
                 try { (centerResult as IDisposable)?.Dispose(); } catch { }
             }
 
@@ -579,14 +999,14 @@ namespace LogikalMiddleware.Bridge
             var centersInfos = centersInfosProp.GetValue(_loginScope) as IEnumerable;
             if (centersInfos == null) throw new Exception("No project centers");
 
-            // Parse center filter into a set for fast lookup
-            HashSet<string> allowedCenters = null;
+            // Parse center filter
+            HashSet<string> allowedSubCenters = null;
             if (!string.IsNullOrWhiteSpace(_centerFilter))
             {
-                allowedCenters = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+                allowedSubCenters = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
                 foreach (var c in _centerFilter.Split(','))
-                    if (!string.IsNullOrWhiteSpace(c)) allowedCenters.Add(c.Trim());
-                Console.WriteLine("[Bridge] Searching with center filter: " + _centerFilter);
+                    if (!string.IsNullOrWhiteSpace(c)) allowedSubCenters.Add(c.Trim());
+                Console.WriteLine("[Bridge] Searching elevation in sub-centers: " + _centerFilter);
             }
 
             foreach (var centerInfo in centersInfos)
@@ -602,21 +1022,60 @@ namespace LogikalMiddleware.Bridge
                     centerResult = getPC.Invoke(_loginScope, new object[] { centerInfo });
                     var centerObj = centerResult.GetType().GetProperty("CoreObject").GetValue(centerResult);
 
+                    // If we have a sub-center filter, navigate via ProjectCenterContainer
+                    if (allowedSubCenters != null)
+                    {
+                        System.Reflection.PropertyInfo containerProp = null;
+                        foreach (var iface in centerObj.GetType().GetInterfaces())
+                        {
+                            containerProp = iface.GetProperty("ProjectCenterContainer");
+                            if (containerProp != null) break;
+                        }
+                        if (containerProp != null)
+                        {
+                            var container = containerProp.GetValue(centerObj);
+                            if (container != null)
+                            {
+                                var subInfosProp = container.GetType().GetProperty("ChildrenInfos");
+                                var subInfos = subInfosProp != null ? subInfosProp.GetValue(container) as IEnumerable : null;
+                                if (subInfos != null)
+                                {
+                                    foreach (var subInfo in subInfos)
+                                    {
+                                        var subNameProp = subInfo.GetType().GetProperty("DirectoryName");
+                                        var subName = subNameProp != null ? subNameProp.GetValue(subInfo)?.ToString() ?? "" : "";
+                                        if (!allowedSubCenters.Contains(subName)) continue;
+
+                                        Console.WriteLine("[Bridge] Searching elevation in sub-center: " + subName);
+                                        var getSubChild = container.GetType().GetMethod("GetChild");
+                                        if (getSubChild == null) continue;
+
+                                        var subResult = getSubChild.Invoke(container, new object[] { subInfo });
+                                        var subObj = subResult.GetType().GetProperty("CoreObject").GetValue(subResult);
+
+                                        var result = SearchElevationInCenter(subObj, targetGuid, disposables);
+                                        if (result != null)
+                                        {
+                                            if (subResult is IDisposable sd) disposables.Add(sd);
+                                            if (centerResult is IDisposable cd) disposables.Add(cd);
+                                            return result;
+                                        }
+                                        try { (subResult as IDisposable)?.Dispose(); } catch { }
+                                    }
+                                }
+                            }
+                        }
+                        try { (centerResult as IDisposable)?.Dispose(); } catch { }
+                        continue;
+                    }
+
+                    // No filter: search directly in center's projects
                     var childrenInfosProp = centerObj.GetType().GetProperty("ChildrenInfos");
                     var childrenInfos = childrenInfosProp != null ? childrenInfosProp.GetValue(centerObj) as IEnumerable : null;
                     if (childrenInfos == null) { try { (centerResult as IDisposable)?.Dispose(); } catch { } continue; }
 
                     foreach (var projInfo in childrenInfos)
                     {
-                        // Filter by center/folder name if filter is set
-                        if (allowedCenters != null)
-                        {
-                            var projNameProp = projInfo.GetType().GetProperty("Name");
-                            var projName = projNameProp != null ? projNameProp.GetValue(projInfo)?.ToString() ?? "" : "";
-                            if (!allowedCenters.Contains(projName))
-                                continue;
-                        }
-
                         object projectResult = null;
                         try
                         {
@@ -680,6 +1139,111 @@ namespace LogikalMiddleware.Bridge
             }
 
             throw new Exception("Elevation not found: " + guidStr);
+        }
+
+        /// <summary>
+        /// Searches for an elevation GUID within a center/sub-center object's projects.
+        /// Returns the elevation CoreObject if found, null otherwise.
+        /// </summary>
+        static System.Reflection.PropertyInfo SafeGetProperty(object obj, string name)
+        {
+            try { return obj.GetType().GetProperty(name); }
+            catch
+            {
+                foreach (var iface in obj.GetType().GetInterfaces())
+                {
+                    var p = iface.GetProperty(name);
+                    if (p != null) return p;
+                }
+                return null;
+            }
+        }
+
+        static System.Reflection.MethodInfo SafeGetMethod(object obj, string name)
+        {
+            try { return obj.GetType().GetMethod(name); }
+            catch
+            {
+                foreach (var iface in obj.GetType().GetInterfaces())
+                {
+                    var m = iface.GetMethod(name);
+                    if (m != null) return m;
+                }
+                return null;
+            }
+        }
+
+        static object SearchElevationInCenter(object centerObj, Guid targetGuid, List<IDisposable> disposables)
+        {
+            var childrenInfosProp = SafeGetProperty(centerObj, "ChildrenInfos");
+            var childrenInfos = childrenInfosProp != null ? childrenInfosProp.GetValue(centerObj) as IEnumerable : null;
+            if (childrenInfos == null) { Console.WriteLine("[Bridge] No ChildrenInfos on sub-center obj"); return null; }
+            int projCount = 0;
+            foreach (var x in childrenInfos) projCount++;
+            Console.WriteLine("[Bridge] Sub-center has " + projCount + " projects, iterating...");
+
+            // Re-enumerate
+            childrenInfos = childrenInfosProp.GetValue(centerObj) as IEnumerable;
+            foreach (var projInfo in childrenInfos)
+            {
+                var pNameProp = SafeGetProperty(projInfo, "Name");
+                var pName = pNameProp != null ? pNameProp.GetValue(projInfo)?.ToString() ?? "" : "?";
+                Console.WriteLine("[Bridge] Opening project: " + pName);
+                object projectResult = null;
+                try
+                {
+                    var getChild = SafeGetMethod(centerObj, "GetChild");
+                    projectResult = getChild.Invoke(centerObj, new object[] { projInfo });
+                    var projectObj = SafeGetProperty(projectResult, "CoreObject").GetValue(projectResult);
+
+                    var phaseInfosProp = SafeGetProperty(projectObj, "ChildrenInfos");
+                    var phaseInfos = phaseInfosProp != null ? phaseInfosProp.GetValue(projectObj) as IEnumerable : null;
+                    if (phaseInfos == null) { Console.WriteLine("[Bridge]   No phases"); try { (projectResult as IDisposable)?.Dispose(); } catch { } continue; }
+
+                    foreach (var phaseInfo in phaseInfos)
+                    {
+                        object phaseResult = null;
+                        try
+                        {
+                            var getPhaseChild = SafeGetMethod(projectObj, "GetChild");
+                            phaseResult = getPhaseChild.Invoke(projectObj, new object[] { phaseInfo });
+                            var phaseObj = SafeGetProperty(phaseResult, "CoreObject").GetValue(phaseResult);
+
+                            var elevInfosProp = SafeGetProperty(phaseObj, "ChildrenInfos");
+                            var elevInfos = elevInfosProp != null ? elevInfosProp.GetValue(phaseObj) as IEnumerable : null;
+                            if (elevInfos == null) { Console.WriteLine("[Bridge]   No elevations in phase"); try { (phaseResult as IDisposable)?.Dispose(); } catch { } continue; }
+
+                            int elevCount = 0;
+                            foreach (var elevInfo in elevInfos)
+                            {
+                                var guidProp = SafeGetProperty(elevInfo, "Guid");
+                                if (guidProp == null) continue;
+                                var elevGuid = (Guid)guidProp.GetValue(elevInfo);
+                                elevCount++;
+                                if (elevCount <= 3) Console.WriteLine("[Bridge]   Elevation GUID: " + elevGuid);
+
+                                if (elevGuid == targetGuid)
+                                {
+                                    Console.WriteLine("[Bridge] Found elevation " + targetGuid + " in sub-center");
+                                    var getElevChild = SafeGetMethod(phaseObj, "GetChild");
+                                    var elevResult = getElevChild.Invoke(phaseObj, new object[] { elevInfo });
+                                    var elevObj = SafeGetProperty(elevResult, "CoreObject").GetValue(elevResult);
+
+                                    if (elevResult is IDisposable d1) disposables.Add(d1);
+                                    if (phaseResult is IDisposable d2) disposables.Add(d2);
+                                    if (projectResult is IDisposable d3) disposables.Add(d3);
+                                    return elevObj;
+                                }
+                            }
+                            try { (phaseResult as IDisposable)?.Dispose(); } catch { }
+                        }
+                        catch { try { (phaseResult as IDisposable)?.Dispose(); } catch { } }
+                    }
+                    try { (projectResult as IDisposable)?.Dispose(); } catch { }
+                }
+                catch { try { (projectResult as IDisposable)?.Dispose(); } catch { } }
+            }
+            return null;
         }
 
         static string GetElevations(string projectGuidStr)
