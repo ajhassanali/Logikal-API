@@ -30,6 +30,8 @@ public class FilesController : ControllerBase
                     p.Name.Contains(term, StringComparison.OrdinalIgnoreCase) ||
                     (p.CustomerName?.Contains(term, StringComparison.OrdinalIgnoreCase) ?? false) ||
                     (p.ProjectCenter?.Contains(term, StringComparison.OrdinalIgnoreCase) ?? false) ||
+                    (p.JobNumber?.Contains(term, StringComparison.OrdinalIgnoreCase) ?? false) ||
+                    (p.OfferNumber?.Contains(term, StringComparison.OrdinalIgnoreCase) ?? false) ||
                     p.FolderPath.Contains(term, StringComparison.OrdinalIgnoreCase)
                 ).ToList();
             }
