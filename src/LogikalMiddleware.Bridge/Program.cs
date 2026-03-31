@@ -265,6 +265,13 @@ namespace LogikalMiddleware.Bridge
                 return;
             }
 
+            // Thumbnail by project GUID + position number
+            if (path.StartsWith("/projects/") && path.EndsWith("/thumbnail"))
+            {
+                HandlePositionThumbnail(context, path);
+                return;
+            }
+
             string responseJson;
             int statusCode = 200;
 
@@ -356,6 +363,103 @@ namespace LogikalMiddleware.Bridge
                 context.Response.ContentLength64 = buffer.Length;
                 context.Response.OutputStream.Write(buffer, 0, buffer.Length);
                 Console.WriteLine("[Bridge] Thumbnail error: " + ex);
+            }
+            context.Response.Close();
+        }
+
+        /// <summary>
+        /// Handle /projects/{projectGuid}/positions/{posNr}/thumbnail
+        /// Gets thumbnail by project API GUID + position number (bridges file-system and API GUIDs).
+        /// URL format: /projects/{guid}/positions/{posNr}/thumbnail
+        /// </summary>
+        static void HandlePositionThumbnail(HttpListenerContext context, string path)
+        {
+            try
+            {
+                // Parse: /projects/{guid}/positions/{posNr}/thumbnail
+                var parts = path.Split('/');
+                // parts: ["", "projects", "{guid}", "positions", "{posNr}", "thumbnail"]
+                if (parts.Length < 6) throw new Exception("Invalid path format");
+                var projectGuid = parts[2];
+                var posNr = parts[4];
+
+                Console.WriteLine("[Bridge] Getting thumbnail by position: project=" + projectGuid + " pos=" + posNr);
+
+                if (_loginScope == null) throw new Exception("Not connected");
+
+                // Open project
+                object projectResult;
+                var projectObj = OpenProjectByGuid(projectGuid, out projectResult);
+
+                try
+                {
+                    // Find the elevation by position number
+                    var phaseInfosProp = SafeGetProperty(projectObj, "ChildrenInfos");
+                    var phaseInfos = phaseInfosProp != null ? phaseInfosProp.GetValue(projectObj) as IEnumerable : null;
+
+                    if (phaseInfos != null)
+                    {
+                        foreach (var phaseInfo in phaseInfos)
+                        {
+                            object phaseResult = null;
+                            try
+                            {
+                                var getPhaseChild = SafeGetMethod(projectObj, "GetChild");
+                                phaseResult = getPhaseChild.Invoke(projectObj, new object[] { phaseInfo });
+                                var phaseObj = SafeGetProperty(phaseResult, "CoreObject").GetValue(phaseResult);
+
+                                var elevInfosProp = SafeGetProperty(phaseObj, "ChildrenInfos");
+                                var elevInfos = elevInfosProp != null ? elevInfosProp.GetValue(phaseObj) as IEnumerable : null;
+                                if (elevInfos == null) { try { (phaseResult as IDisposable)?.Dispose(); } catch { } continue; }
+
+                                int idx = 0;
+                                foreach (var elevInfo in elevInfos)
+                                {
+                                    idx++;
+                                    var nameProp = SafeGetProperty(elevInfo, "Name");
+                                    var elevName = nameProp != null ? nameProp.GetValue(elevInfo)?.ToString() ?? "" : "";
+                                    var guidProp = SafeGetProperty(elevInfo, "Guid");
+                                    var elevGuid = guidProp != null ? ((Guid)guidProp.GetValue(elevInfo)).ToString() : "";
+
+                                    // Match by position number (index) or by name containing posNr
+                                    if (idx.ToString("D3") == posNr || idx.ToString() == posNr ||
+                                        elevName.StartsWith(posNr) || posNr == idx.ToString("D2"))
+                                    {
+                                        Console.WriteLine("[Bridge] Found elevation by position " + posNr + ": " + elevGuid + " " + elevName);
+
+                                        // Get thumbnail using the API GUID
+                                        var imageBytes = GetThumbnail(elevGuid);
+
+                                        context.Response.ContentType = "image/png";
+                                        context.Response.StatusCode = 200;
+                                        context.Response.ContentLength64 = imageBytes.Length;
+                                        context.Response.OutputStream.Write(imageBytes, 0, imageBytes.Length);
+                                        context.Response.Close();
+                                        return;
+                                    }
+                                }
+                                try { (phaseResult as IDisposable)?.Dispose(); } catch { }
+                            }
+                            catch { try { (phaseResult as IDisposable)?.Dispose(); } catch { } }
+                        }
+                    }
+
+                    throw new Exception("Position " + posNr + " not found in project " + projectGuid);
+                }
+                finally
+                {
+                    try { (projectResult as IDisposable)?.Dispose(); } catch { }
+                }
+            }
+            catch (Exception ex)
+            {
+                var errorJson = "{\"error\":\"" + EscapeJson(ex.InnerException != null ? ex.InnerException.Message : ex.Message) + "\"}";
+                var buffer = Encoding.UTF8.GetBytes(errorJson);
+                context.Response.ContentType = "application/json";
+                context.Response.StatusCode = 500;
+                context.Response.ContentLength64 = buffer.Length;
+                context.Response.OutputStream.Write(buffer, 0, buffer.Length);
+                Console.WriteLine("[Bridge] Position thumbnail error: " + ex.Message);
             }
             context.Response.Close();
         }
