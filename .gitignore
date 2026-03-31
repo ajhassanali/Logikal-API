@@ -2,15 +2,32 @@
 bin/
 obj/
 out/
+publish/
+*.dll
+*.exe
+*.pdb
+!tools/**
+
+# NuGet
+*.nupkg
+packages/
 
 # Node
 node_modules/
+dist/
+
+# Test results
+src/LogikalMiddleware.Dashboard/test-results/
+playwright-report/
+TestResults/
 
 # IDE
 .vs/
 .vscode/
 *.user
 *.suo
+*.csproj.user
+.idea/
 
 # OS
 Thumbs.db
@@ -19,3 +36,12 @@ Desktop.ini
 
 # Claude Code
 .claude/
+
+# Environment / secrets
+*.env
+*.env.*
+appsettings.Local.json
+
+# Logs
+*.log
+logs/

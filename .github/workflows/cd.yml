@@ -1,0 +1,65 @@
+name: CD
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  build-and-publish:
+    name: Build & Publish
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET 6
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 6.0.x
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: src/LogikalMiddleware.Dashboard/package-lock.json
+
+      # Build Dashboard first so it outputs to wwwroot
+      - name: Install Dashboard dependencies
+        working-directory: src/LogikalMiddleware.Dashboard
+        run: npm ci
+
+      - name: Build Dashboard
+        working-directory: src/LogikalMiddleware.Dashboard
+        run: npm run build
+
+      # Build .NET
+      - name: Restore NuGet packages
+        run: dotnet restore LogikalMiddleware.sln
+
+      - name: Publish API
+        run: dotnet publish src/LogikalMiddleware.Api/LogikalMiddleware.Api.csproj --configuration Release --output ./publish/api
+
+      - name: Publish Windows Service
+        run: dotnet publish src/LogikalMiddleware.Service/LogikalMiddleware.Service.csproj --configuration Release --output ./publish/service
+
+      - name: Publish Bridge
+        run: dotnet publish src/LogikalMiddleware.Bridge/LogikalMiddleware.Bridge.csproj --configuration Release --output ./publish/bridge
+
+      # Upload artifacts
+      - name: Upload API artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: logikal-api
+          path: ./publish/api
+
+      - name: Upload Service artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: logikal-service
+          path: ./publish/service
+
+      - name: Upload Bridge artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: logikal-bridge
+          path: ./publish/bridge
