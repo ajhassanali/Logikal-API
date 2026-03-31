@@ -1,0 +1,79 @@
+﻿<views:BaseWindow x:Class="Ofcas.Lk.Api.Client.Demo.Views.AddressWindow"
+                  xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                  xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                  xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+                  xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+                  xmlns:viewModels="clr-namespace:Ofcas.Lk.Api.Client.Demo.ViewModels"
+                  xmlns:controls="clr-namespace:Ofcas.Lk.Api.Client.Demo.Controls"
+                  xmlns:views="clr-namespace:Ofcas.Lk.Api.Client.Demo.Views"
+                  xmlns:dc="clr-namespace:Ofcas.Lk.Api.Shared;assembly=Ofcas.Lk.Api.Shared"
+                  mc:Ignorable="d"
+                  Title="Address"
+                  Height="590"
+                  Width="360"
+                  WindowStartupLocation="CenterScreen"
+                  d:DataContext="{d:DesignInstance viewModels:AddressViewModel}">
+    <StackPanel>
+        <Grid IsSharedSizeScope="True">
+            <Grid.RowDefinitions>
+                <RowDefinition />
+                <RowDefinition />
+                <RowDefinition />
+                <RowDefinition />
+                <RowDefinition />
+                <RowDefinition />
+                <RowDefinition />
+                <RowDefinition />
+                <RowDefinition />
+                <RowDefinition />
+                <RowDefinition />
+                <RowDefinition />
+                <RowDefinition />
+                <RowDefinition />
+                <RowDefinition />
+                <RowDefinition />
+                <RowDefinition />
+                <RowDefinition />
+                <RowDefinition />
+                <RowDefinition />
+                <RowDefinition />
+            </Grid.RowDefinitions>
+
+            <controls:TextField Grid.Row="0" Header="Guid" Text="{Binding SelectedAddress.Guid, Mode=TwoWay, TargetNullValue='-'}" />
+            <controls:TextField Grid.Row="1" Header="Type" Text="{Binding SelectedAddress.Type, Mode=TwoWay, TargetNullValue='-'}" />
+            <controls:TextField Grid.Row="2" Header="Salutation" Text="{Binding SelectedAddress.Salutation, Mode=TwoWay, TargetNullValue='-'}"
+                                EditCommand="{Binding EditCommand}" EditKey="{x:Static dc:WellKnownEditKey+Address.Salutation}" />
+            <controls:TextField Grid.Row="3" Header="CustomerNo" Text="{Binding SelectedAddress.CustomerNo, Mode=TwoWay, TargetNullValue='-'}"
+                                EditCommand="{Binding EditCommand}" EditKey="{x:Static dc:WellKnownEditKey+Address.CustomerNo}" />
+            <controls:TextField Grid.Row="4" Header="Name1" Text="{Binding SelectedAddress.Name1, Mode=TwoWay, TargetNullValue='-'}"
+                                EditCommand="{Binding EditCommand}" EditKey="{x:Static dc:WellKnownEditKey+Address.Name1}" />
+            <controls:TextField Grid.Row="5" Header="Name2" Text="{Binding SelectedAddress.Name2, Mode=TwoWay, TargetNullValue='-'}"
+                                EditCommand="{Binding EditCommand}" EditKey="{x:Static dc:WellKnownEditKey+Address.Name2}" />
+            <controls:TextField Grid.Row="6" Header="Street" Text="{Binding SelectedAddress.Street, Mode=TwoWay, TargetNullValue='-'}" 
+                                EditCommand="{Binding EditCommand}" EditKey="{x:Static dc:WellKnownEditKey+Address.Street}" />
+            <controls:TextField Grid.Row="7" Header="City" Text="{Binding SelectedAddress.City, Mode=TwoWay, TargetNullValue='-'}" 
+                                EditCommand="{Binding EditCommand}" EditKey="{x:Static dc:WellKnownEditKey+Address.City}" />
+            <controls:TextField Grid.Row="8" Header="ZipCode" Text="{Binding SelectedAddress.ZipCode, Mode=TwoWay, TargetNullValue='-'}" 
+                                EditCommand="{Binding EditCommand}" EditKey="{x:Static dc:WellKnownEditKey+Address.ZipCode}" />
+            <controls:TextField Grid.Row="9" Header="Phone1" Text="{Binding SelectedAddress.Phone1, Mode=TwoWay, TargetNullValue='-'}" 
+                                EditCommand="{Binding EditCommand}" EditKey="{x:Static dc:WellKnownEditKey+Address.Phone1}" />
+            <controls:TextField Grid.Row="10" Header="Phone2" Text="{Binding SelectedAddress.Phone2, Mode=TwoWay, TargetNullValue='-'}" 
+                                EditCommand="{Binding EditCommand}" EditKey="{x:Static dc:WellKnownEditKey+Address.Phone2}" />
+            <controls:TextField Grid.Row="11" Header="Fax" Text="{Binding SelectedAddress.Fax, Mode=TwoWay, TargetNullValue='-'}" 
+                                EditCommand="{Binding EditCommand}" EditKey="{x:Static dc:WellKnownEditKey+Address.Fax}" />
+            <controls:TextField Grid.Row="12" Header="EMail" Text="{Binding SelectedAddress.EMail, Mode=TwoWay, TargetNullValue='-'}" 
+                                EditCommand="{Binding EditCommand}" EditKey="{x:Static dc:WellKnownEditKey+Address.EMail}" />
+            <controls:TextField Grid.Row="13" Header="FAO" Text="{Binding SelectedAddress.FAO, Mode=TwoWay, TargetNullValue='-'}" 
+                                EditCommand="{Binding EditCommand}" EditKey="{x:Static dc:WellKnownEditKey+Address.FAO}" />
+            <controls:TextField Grid.Row="14" Header="CustomerRef" Text="{Binding SelectedAddress.CustomerRef, Mode=TwoWay, TargetNullValue='-'}" 
+                                EditCommand="{Binding EditCommand}" EditKey="{x:Static dc:WellKnownEditKey+Address.CustomerRef}" />
+            <controls:TextField Grid.Row="15" Header="Condition" Text="{Binding SelectedAddress.Condition, Mode=TwoWay, TargetNullValue='-'}" 
+                                EditCommand="{Binding EditCommand}" EditKey="{x:Static dc:WellKnownEditKey+Address.Condition}" />
+            <controls:TextField Grid.Row="16" Header="FreeText1" Text="{Binding SelectedAddress.FreeText1, Mode=TwoWay, TargetNullValue='-'}" />
+            <controls:TextField Grid.Row="17" Header="FreeText2" Text="{Binding SelectedAddress.FreeText2, Mode=TwoWay, TargetNullValue='-'}" />
+            <controls:TextField Grid.Row="18" Header="FreeText3" Text="{Binding SelectedAddress.FreeText3, Mode=TwoWay, TargetNullValue='-'}" />
+            <controls:TextField Grid.Row="19" Header="Country" Text="{Binding SelectedAddress.Country, Mode=TwoWay, TargetNullValue='-'}" />
+            <controls:TextField Grid.Row="20" Header="IsEmpty" Text="{Binding SelectedAddress.IsEmpty, Mode=TwoWay, TargetNullValue='-'}" />
+        </Grid>
+    </StackPanel>
+</views:BaseWindow>

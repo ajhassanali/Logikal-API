@@ -1,0 +1,75 @@
+﻿<views:FilteredSelectionWindow x:Class="Ofcas.Lk.Api.Client.Demo.Views.SelectReportsWindow"
+                               xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                               xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                               xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+                               xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+                               xmlns:viewModels="clr-namespace:Ofcas.Lk.Api.Client.Demo.ViewModels"
+                               xmlns:utils="clr-namespace:Ofcas.Lk.Api.Client.Demo.Utils"
+                               xmlns:i="http://schemas.microsoft.com/expression/2010/interactivity"
+                               xmlns:views="clr-namespace:Ofcas.Lk.Api.Client.Demo.Views"
+                               mc:Ignorable="d"
+                               d:DataContext="{d:DesignInstance viewModels:SelectReportsViewModel}"
+                               utils:DialogCloser.DialogResult="{Binding DialogResult.Value}"
+                               WindowStartupLocation="CenterScreen"
+                               Title="Select Reports"
+                               Height="550"
+                               Width="550">
+
+    <Window.Resources>
+        <CollectionViewSource x:Key="SortedElevations" Source="{Binding Reports.ItemsSource}">
+            <CollectionViewSource.GroupDescriptions>
+                <PropertyGroupDescription PropertyName="Name" />
+            </CollectionViewSource.GroupDescriptions>
+        </CollectionViewSource>
+    </Window.Resources>
+
+    <Grid Margin="5">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="25" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="35" />
+        </Grid.RowDefinitions>
+
+        <DockPanel Grid.Row="0" LastChildFill="True">
+            <TextBlock VerticalAlignment="Center" Text="Filter: " />
+
+            <TextBox utils:KeyboardFocusManager.FocusOnStartup="True"
+                     VerticalContentAlignment="Center"
+                     TextChanged="OnFilterTextChanged" />
+        </DockPanel>
+
+        <ListView ItemsSource="{Binding Source={StaticResource SortedElevations}}"
+                  SelectionMode="Extended"
+                  SelectedItem="{Binding Reports.SelectedItem}"
+                  Grid.Row="1"
+                  Name="ReportList"
+                  ToolTip="double-click to open"
+                  GridViewColumnHeader.Click="OnGridViewColumnHeaderClicked">
+            <i:Interaction.Triggers>
+                <i:EventTrigger EventName="MouseDoubleClick">
+                    <i:InvokeCommandAction Command="{Binding AcceptCommand}" />
+                </i:EventTrigger>
+            </i:Interaction.Triggers>
+
+            <ListView.View>
+                <GridView>
+                    <GridViewColumn Header="Id" DisplayMemberBinding="{Binding Id}" Width="120" />
+                    <GridViewColumn Header="Name" DisplayMemberBinding="{Binding Name}" Width="120" />
+                    <GridViewColumn Header="Visible" DisplayMemberBinding="{Binding Visible}" Width="70" />
+                    <GridViewColumn Header="Favorite" DisplayMemberBinding="{Binding Favorite}" Width="70" />
+                    <GridViewColumn Header="Rank" DisplayMemberBinding="{Binding Rank}" />
+                    <GridViewColumn Header="Category" DisplayMemberBinding="{Binding Category.Name}" Width="120" />
+                    <GridViewColumn Header="Category-Id" DisplayMemberBinding="{Binding Category.Id}" Width="120" />
+                </GridView>
+            </ListView.View>
+        </ListView>
+
+        <Grid Grid.Row="2" Margin="5">
+            <Button Width="100"
+                    HorizontalAlignment="Right"
+                    Command="{Binding AcceptCommand}"
+                    Content="Ok"
+                    IsDefault="True" />
+        </Grid>
+    </Grid>
+</views:FilteredSelectionWindow>

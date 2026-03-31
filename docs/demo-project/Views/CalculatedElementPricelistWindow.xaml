@@ -1,0 +1,41 @@
+﻿<views:BaseWindow x:Class="Ofcas.Lk.Api.Client.Demo.Views.CalculatedElementPricelistWindow"
+                  xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                  xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                  xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+                  xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+                  xmlns:viewModels="clr-namespace:Ofcas.Lk.Api.Client.Demo.ViewModels"
+                  xmlns:views="clr-namespace:Ofcas.Lk.Api.Client.Demo.Views"
+                  mc:Ignorable="d"
+                  d:DataContext="{d:DesignInstance viewModels:CalculatedElementPricelistViewModel}"
+                  WindowStartupLocation="CenterScreen"
+                  Height="500"
+                  Width="370"
+                  Title="Calculated Element Pricelist">
+
+    <Grid Margin="5">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="10" />
+            <RowDefinition />
+        </Grid.RowDefinitions>
+
+        <Grid Height="300">
+            <Image Source="{Binding Preview}" />
+        </Grid>
+
+        <Separator Grid.Row="1" Height="2" />
+
+        <Grid Grid.Row="2">
+            <ListView ItemsSource="{Binding Prices.ItemsSource}">
+                <ListView.View>
+                    <GridView>
+                        <GridView.Columns>
+                            <GridViewColumn Header="Description" DisplayMemberBinding="{Binding Description}" Width="250" />
+                            <GridViewColumn Header="Price" DisplayMemberBinding="{Binding Value}" Width="70" />
+                        </GridView.Columns>
+                    </GridView>
+                </ListView.View>
+            </ListView>
+        </Grid>
+    </Grid>
+</views:BaseWindow>

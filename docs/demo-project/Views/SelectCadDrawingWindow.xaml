@@ -1,0 +1,54 @@
+﻿<views:BaseWindow x:Class="Ofcas.Lk.Api.Client.Demo.Views.SelectCadDrawingWindow"
+                  xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                  xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                  xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+                  xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+                  xmlns:viewModels="clr-namespace:Ofcas.Lk.Api.Client.Demo.ViewModels"
+                  xmlns:utils="clr-namespace:Ofcas.Lk.Api.Client.Demo.Utils"
+                  xmlns:i="http://schemas.microsoft.com/expression/2010/interactivity"
+                  xmlns:views="clr-namespace:Ofcas.Lk.Api.Client.Demo.Views"
+                  mc:Ignorable="d"
+                  d:DataContext="{d:DesignInstance viewModels:SelectReportsViewModel}"
+                  utils:DialogCloser.DialogResult="{Binding DialogResult.Value}"
+                  WindowStartupLocation="CenterScreen"
+                  Title="Select CAD Drawing"
+                  Height="310"
+                  Width="400">
+    <Window.Resources>
+        <CollectionViewSource x:Key="CadDrawingsList" Source="{Binding CadDrawings.ItemsSource}">
+            <CollectionViewSource.GroupDescriptions>
+                <PropertyGroupDescription PropertyName="Source.Name" />
+            </CollectionViewSource.GroupDescriptions>
+        </CollectionViewSource>
+    </Window.Resources>
+
+    <Grid Margin="5">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="200" />
+            <RowDefinition Height="35" />
+        </Grid.RowDefinitions>
+        
+        <ListView ItemsSource="{Binding Source={StaticResource CadDrawingsList}}"
+                  SelectionMode="Extended"
+                  SelectedItem="{Binding CadDrawings.SelectedItem}"
+                  Name="CadDrawingList"
+                  Grid.Row="0">
+            <ListView.View>
+                <GridView>
+                    <GridViewColumn Header="Name" DisplayMemberBinding="{Binding Name}" />
+                    <GridViewColumn Header="LastChangedDate" DisplayMemberBinding="{Binding LastChangedDate}" />
+                </GridView>
+            </ListView.View>
+            <i:Interaction.Triggers>
+                <i:EventTrigger EventName="MouseDoubleClick">
+                    <i:InvokeCommandAction Command="{Binding AcceptCommand}" />
+                </i:EventTrigger>
+            </i:Interaction.Triggers>
+        </ListView>
+
+        <StackPanel Grid.Row="1" HorizontalAlignment="Right" Orientation="Horizontal">
+            <Button Width="80" Margin="0,0,5,0" Content="OK" IsDefault="True" Command="{Binding AcceptCommand}" />
+            <Button Width="80" Content="Cancel" IsCancel="True" />
+        </StackPanel>
+    </Grid>
+</views:BaseWindow>

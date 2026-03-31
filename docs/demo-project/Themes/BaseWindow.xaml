@@ -1,0 +1,24 @@
+﻿<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:utils="clr-namespace:Ofcas.Lk.Api.Client.Demo.Utils"
+                    xmlns:views="clr-namespace:Ofcas.Lk.Api.Client.Demo.Views"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <Style TargetType="{x:Type views:BaseWindow}" BasedOn="{StaticResource {x:Type Window}}">
+        <Style.Resources>
+            <utils:NullOrWhiteSpaceToCollapsedConverter x:Key="NullOrWhiteSpaceToCollapsed" />
+        </Style.Resources>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="{x:Type views:BaseWindow}">
+                    <DockPanel Background="{TemplateBinding Background}">
+                        <StatusBar BorderThickness="0,1,0,0" BorderBrush="#cccccc" DockPanel.Dock="Bottom" Background="#ffffff" Visibility="{Binding VersionInformation, Source={x:Static utils:ApplicationHelper.Instance}, Converter={StaticResource NullOrWhiteSpaceToCollapsed}}">
+                            <StatusBarItem HorizontalAlignment="Right">
+                                <TextBlock Text="{Binding VersionInformation, Source={x:Static utils:ApplicationHelper.Instance}}" />
+                            </StatusBarItem>
+                        </StatusBar>
+                        <ContentPresenter />
+                    </DockPanel>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+</ResourceDictionary>

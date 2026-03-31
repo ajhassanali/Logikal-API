@@ -1,0 +1,109 @@
+﻿<views:BaseWindow x:Class="Ofcas.Lk.Api.Client.Demo.Views.SynchronizationContainerWindow"
+                  xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                  xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                  xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+                  xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+                  xmlns:i="http://schemas.microsoft.com/expression/2010/interactivity"
+                  xmlns:viewModels="clr-namespace:Ofcas.Lk.Api.Client.Demo.ViewModels"
+                  xmlns:utils="clr-namespace:Ofcas.Lk.Api.Client.Demo.Utils"
+                  xmlns:views="clr-namespace:Ofcas.Lk.Api.Client.Demo.Views"
+                  xmlns:shared="clr-namespace:Ofcas.Lk.Api.Shared;assembly=Ofcas.Lk.Api.Shared"
+                  WindowStartupLocation="CenterScreen"
+                  mc:Ignorable="d"
+                  d:DataContext="{d:DesignInstance viewModels:SynchronizationContainerViewModel}"
+                  Title="{Binding Title.Value}"
+                  Height="600"
+                  Width="700">
+    <Window.Resources>
+        <utils:SynchronizationMessageToPreviewConverter x:Key="SynchronizationMessageToPreviewConverter" />
+    </Window.Resources>
+    <DockPanel>
+        <Menu DockPanel.Dock="Top">
+            <MenuItem Header="_View">
+                <MenuItem Header="_CoreObjectDetails" Command="{Binding CoreObjectDetailsCommand}" />
+            </MenuItem>
+            <MenuItem Header="_Settings">
+                <MenuItem Header="_Toggle Synchronization" Command="{Binding ToggleSynchronizationCommand}" IsCheckable="True"
+                                  IsChecked="{Binding AcceptsSynchronizations, Mode=OneWay}" />
+            </MenuItem>
+        </Menu>
+        
+        <Grid Margin="5">
+            <Grid.Resources>
+                <utils:SynchronizedEventActionToStringConverter x:Key="SynchronizedEventActionToString" />
+                <utils:SynchronizedEventObjectToStringConverter x:Key="SynchronizedEventObjectToString" />
+                <Style x:Key="StyledListViewItem" TargetType="ListViewItem" 
+                   d:DataContext="{d:DesignInstance shared:ISynchronization}">
+                    <Style.Resources>
+                        <utils:ValueIsNullConverter x:Key="ValueIsNull" />
+                    </Style.Resources>
+                    <Style.Triggers>
+                        <DataTrigger Binding="{Binding Exception, Converter={StaticResource ValueIsNull}}"
+                                 Value="False">
+                            <Setter Property="Foreground" Value="Red" />
+                        </DataTrigger>
+                    </Style.Triggers>
+                </Style>
+            </Grid.Resources>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="1*" />
+            </Grid.ColumnDefinitions>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="5*" />
+                <RowDefinition Height="50*" />
+                <RowDefinition Height="5*" />
+                <RowDefinition Height="40*" />
+            </Grid.RowDefinitions>
+
+            <Label Grid.Row="0" Content="Events" />
+
+            <ListView Grid.Row="1"
+                      SelectionMode="Single"
+                      ItemsSource="{Binding SynchronizedEvents.ItemsSource}"
+                      SelectedItem="{Binding SynchronizedEvents.SelectedItem}"
+                      Margin="3"
+                      ItemContainerStyle="{StaticResource StyledListViewItem}">
+
+                <ListView.View>
+                    <GridView>
+                        <GridViewColumn Header="Action" Width="80" DisplayMemberBinding="{Binding Action, Converter={StaticResource SynchronizedEventActionToString}}" />
+                        <GridViewColumn Header="Object" Width="80" DisplayMemberBinding="{Binding Object, Converter={StaticResource SynchronizedEventObjectToString}}" />
+                        <GridViewColumn Header="ObjectGuid" Width="150" DisplayMemberBinding="{Binding ObjectGuid}" />
+                        <GridViewColumn Header="ActionKey" Width="250" DisplayMemberBinding="{Binding ActionKey}" />
+                    </GridView>
+                </ListView.View>
+                <ListView.ContextMenu>
+                    <ContextMenu>
+                        <MenuItem Header="Clear" Command="{Binding ClearSynchronizationEventsCommand}" />
+                    </ContextMenu>
+                </ListView.ContextMenu>
+
+                <i:Interaction.Triggers>
+                    <i:EventTrigger EventName="MouseDoubleClick">
+                        <i:InvokeCommandAction Command="{Binding ShowDetailsCommand}"
+                                           CommandParameter="{Binding SynchronizedEvents.SelectedItem}" />
+                    </i:EventTrigger>
+                </i:Interaction.Triggers>
+            </ListView>
+
+            <Label Grid.Row="2" Content="Messages" />
+            <ListView Grid.Row="3"
+                      ItemsSource="{Binding SynchronizedMessages.ItemsSource}"
+                      SelectedItem="{Binding SynchronizedMessages.SelectedItem}"
+                      Margin="3"
+                      ItemContainerStyle="{StaticResource StyledListViewItem}">
+                <ListView.View>
+                    <GridView>
+                        <GridViewColumn Header="GUID" Width="80" DisplayMemberBinding="{Binding Guid}" />
+                        <GridViewColumn Header="Preview" Width="500" DisplayMemberBinding="{Binding Converter={StaticResource SynchronizationMessageToPreviewConverter}}" />
+                    </GridView>
+                </ListView.View>
+                <ListView.ContextMenu>
+                    <ContextMenu>
+                        <MenuItem Header="Clear" Command="{Binding ClearSynchronizationMessagesCommand}" />
+                    </ContextMenu>
+                </ListView.ContextMenu>
+            </ListView>
+        </Grid>
+    </DockPanel>
+</views:BaseWindow>

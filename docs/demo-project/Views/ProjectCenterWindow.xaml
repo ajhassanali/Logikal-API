@@ -1,0 +1,160 @@
+﻿<views:BaseWindow x:Class="Ofcas.Lk.Api.Client.Demo.Views.ProjectCenterWindow"
+                  xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                  xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                  xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+                  xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+                  xmlns:i="http://schemas.microsoft.com/expression/2010/interactivity"
+                  xmlns:utils="clr-namespace:Ofcas.Lk.Api.Client.Demo.Utils"
+                  xmlns:viewModels="clr-namespace:Ofcas.Lk.Api.Client.Demo.ViewModels"
+                  xmlns:controls="clr-namespace:Ofcas.Lk.Api.Client.Demo.Controls"
+                  xmlns:views="clr-namespace:Ofcas.Lk.Api.Client.Demo.Views"
+                  xmlns:dc="clr-namespace:Ofcas.Lk.Api.Shared;assembly=Ofcas.Lk.Api.Shared"
+                  mc:Ignorable="d"
+                  WindowStartupLocation="CenterScreen"
+                  Height="600"
+                  Width="370"
+                  d:DataContext="{d:DesignInstance viewModels:ProjectCenterViewModel}"
+                  Title="{Binding ProjectCenterModel.Title}">
+
+    <DockPanel>
+        <Menu DockPanel.Dock="Top">
+            <MenuItem Header="_View">
+                <MenuItem Header="_Project Statuses" Command="{Binding ShowProjectStatusesCommand}" />
+                <MenuItem Header="_CoreObjectDetails" Command="{Binding ShowCoreObjectDetailsCommand}" />
+            </MenuItem>
+            <MenuItem Header="_Tools">
+                <MenuItem Header="_Open In New Window" Command="{Binding OpenInNewWindowCommand}" />
+            </MenuItem>
+            <MenuItem Header="_Synchronization">
+                <MenuItem Header="_Refresh (Projects)" Command="{Binding ForceRefreshCommand}" />
+                <Separator />
+                <MenuItem Header="_Refresh (Projects)" Command="{Binding ForceRefreshProjectsCommand}" />
+                <MenuItem Header="_Container (Projects)" Command="{Binding OpenProjectSynchronizationContainerCommand}" />
+                <Separator />
+                <MenuItem Header="_Refresh (ProjectCenterContainer)" Command="{Binding ForceRefreshProjectCentersCommand}" />
+                <MenuItem Header="_Container (ProjectCenterContainer)" Command="{Binding OpenProjectCenterSynchronizationContainerCommand}" />
+            </MenuItem>
+        </Menu>
+
+        <Grid Margin="5">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="4*" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="3*" />
+            </Grid.RowDefinitions>
+
+            <Grid Grid.Row="0" IsSharedSizeScope="True">
+                <StackPanel>
+                    <StackPanel.Resources>
+                        <utils:PathConverter x:Key="PathConverter" />
+                    </StackPanel.Resources>
+
+                    <controls:TextField Header="CoreObjectId" Text="{Binding ProjectCenterModel.CoreObjectId, StringFormat='{}{0:D}'}" />
+                    <controls:TextField Header="CoreObject Disposed" Text="{Binding CoreObjectDisposed}" />
+                    <controls:TextField Header="DirectoryName" Text="{Binding ProjectCenterModel.DirectoryName}" 
+                                    EditCommand="{Binding EditCommand}" EditKey="{x:Static dc:WellKnownEditKey+ProjectCenter.DIRECTORY_NAME}" />
+                    <controls:TextField Header="Type as Name" Text="{Binding ProjectCenterModel.TypeAsName, Converter={StaticResource PathConverter}}" />
+                    <controls:TextField Header="Type as Id" Text="{Binding ProjectCenterModel.TypeAsId}" />
+                    <controls:TextField Header="IsRecycleBin" Text="{Binding ProjectCenterModel.IsRecycleBin}" />
+                </StackPanel>
+            </Grid>
+
+            <Grid Grid.Row="1">
+                <TextBlock Margin="2" Text="Projects:" />
+            </Grid>
+
+            <ListView Grid.Row="2"
+                      ItemsSource="{Binding Projects.ItemsSource}"
+                  SelectionMode="Extended"
+                  SelectedItem="{Binding Projects.SelectedItem}"
+                  utils:MultiSelectorBehaviours.SynchronizedSelectedItems="{Binding Projects.SelectedItems, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                      ToolTip="double-click to open - right-click for more">
+                <ListView.ContextMenu>
+                    <ContextMenu Name="RightClickContextMenu">
+                        <MenuItem Header="create (default)" Command="{Binding CreateProjectSilentCommand}" />
+                        <MenuItem Header="create (UI)" Command="{Binding CreateProjectUiCommand}" />
+                        <MenuItem Header="create (parameters)" Command="{Binding CreateProjectWithParametersCommand}" />
+                        <MenuItem Header="delete" Command="{Binding DeleteProjectCommand}"
+                                  CommandParameter="{Binding Projects.SelectedItem}" />
+                        <MenuItem Header="delete (UI)" Command="{Binding DeleteProjectUiCommand}"
+                                  CommandParameter="{Binding Projects.SelectedItem}" />
+                        <MenuItem Header="force delete" Command="{Binding ForceDeleteProjectCommand}"
+                                  CommandParameter="{Binding Projects.SelectedItem}" />
+                        <MenuItem Header="force delete (UI)" Command="{Binding ForceDeleteProjectUiCommand}"
+                                  CommandParameter="{Binding Projects.SelectedItem}" />
+                        <MenuItem Header="delete multiple projects" Command="{Binding DeleteProjectsCommand}"
+                                  CommandParameter="{Binding Projects.SelectedItems}" />
+                        <MenuItem Header="delete multiple projects (UI)" Command="{Binding DeleteProjectsUiCommand}"
+                                  CommandParameter="{Binding Projects.SelectedItems}" />
+                        <MenuItem Header="force delete multiple projects" Command="{Binding ForceDeleteProjectsCommand}"
+                                  CommandParameter="{Binding Projects.SelectedItems}" />
+                        <MenuItem Header="force delete multiple projects (UI)" Command="{Binding ForceDeleteProjectsUiCommand}"
+                                  CommandParameter="{Binding Projects.SelectedItems}" />
+                        <Separator />
+                        <MenuItem Header="import" Command="{Binding ImportProjectCommand}" />
+                        <MenuItem Header="export" Command="{Binding ExportChildCommand}"
+                                  CommandParameter="{Binding Projects.SelectedItem}" />
+                        <MenuItem Header="export (UI)" Command="{Binding ExportChildWithUiCommand}"
+                                  CommandParameter="{Binding Projects.SelectedItem}" />
+                        <MenuItem Header="export multiple projects" Command="{Binding ExportChildrenCommand}" />
+                        <Separator />
+                        <MenuItem Header="copy" Command="{Binding CopyProjectCommand}"
+                                  CommandParameter="{Binding Projects.SelectedItem}" />
+                        <MenuItem Header="move" Command="{Binding MoveProjectCommand}" />
+                        <MenuItem Header="paste" Command="{Binding PasteProjectCommand}" />
+                    </ContextMenu>
+                </ListView.ContextMenu>
+
+                <ListView.View>
+                    <GridView>
+                        <GridViewColumn Header="Name" Width="220" DisplayMemberBinding="{Binding Name}" />
+                    </GridView>
+                </ListView.View>
+
+                <i:Interaction.Triggers>
+                    <i:EventTrigger EventName="MouseDoubleClick">
+                        <i:InvokeCommandAction Command="{Binding OpenProjectCommand}"
+                                               CommandParameter="{Binding Projects.SelectedItem}" />
+                    </i:EventTrigger>
+                </i:Interaction.Triggers>
+            </ListView>
+
+            <Grid Grid.Row="3">
+                <TextBlock Margin="2" Text="ProjectCenters (Directories): " />
+            </Grid>
+
+            <ListView Grid.Row="4"
+                      ItemsSource="{Binding ProjectCenters.ItemsSource}"
+                      SelectedItem="{Binding ProjectCenters.SelectedItem}"
+                      SelectionMode="Single"
+                      ToolTip="double-click to open - right-click for more options" Margin="0,6,0,-6">
+                <ListView.ContextMenu>
+                    <ContextMenu>
+                        <MenuItem Header="create" Command="{Binding CreateProjectCenterCommand}" />
+                        <MenuItem Header="delete" Command="{Binding DeleteProjectCenterCommand}"
+                                  CommandParameter="{Binding ProjectCenters.SelectedItem}" />
+                        <MenuItem Header="copy" Command="{Binding CopyProjectCenterCommand}"/>
+                        <MenuItem Header="move" Command="{Binding MoveProjectCenterCommand}" />
+                        <Separator />
+                        <MenuItem Header="open all" Command="{Binding OpenAllProjectCentersCommand}" />
+                    </ContextMenu>
+                </ListView.ContextMenu>
+
+                <i:Interaction.Triggers>
+                    <i:EventTrigger EventName="MouseDoubleClick">
+                        <i:InvokeCommandAction Command="{Binding OpenProjectCenterCommand}"
+                                               CommandParameter="{Binding ProjectCenters.SelectedItem}" />
+                    </i:EventTrigger>
+                </i:Interaction.Triggers>
+
+                <ListView.View>
+                    <GridView>
+                        <GridViewColumn Header="Directory Name" Width="220" DisplayMemberBinding="{Binding DirectoryName}" />
+                    </GridView>
+                </ListView.View>
+            </ListView>
+        </Grid>
+    </DockPanel>
+</views:BaseWindow>

@@ -1,0 +1,48 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31903.59
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{56D2A376-9C83-4145-926D-C7949B5C5C2A}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LogikalMiddleware.Core", "src\LogikalMiddleware.Core\LogikalMiddleware.Core.csproj", "{0707DA68-7CDD-47CC-80CD-76221CE7DEAB}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LogikalMiddleware.Api", "src\LogikalMiddleware.Api\LogikalMiddleware.Api.csproj", "{9DD220C2-6B0D-4182-85C5-0CCCDB456C7D}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LogikalMiddleware.Service", "src\LogikalMiddleware.Service\LogikalMiddleware.Service.csproj", "{E9829932-AADF-4FC8-89E0-C06E9E982A77}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LogikalMiddleware.Bridge", "src\LogikalMiddleware.Bridge\LogikalMiddleware.Bridge.csproj", "{B63FDB69-CD11-497F-80A3-346E7658D7B5}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{0707DA68-7CDD-47CC-80CD-76221CE7DEAB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0707DA68-7CDD-47CC-80CD-76221CE7DEAB}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0707DA68-7CDD-47CC-80CD-76221CE7DEAB}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0707DA68-7CDD-47CC-80CD-76221CE7DEAB}.Release|Any CPU.Build.0 = Release|Any CPU
+		{9DD220C2-6B0D-4182-85C5-0CCCDB456C7D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9DD220C2-6B0D-4182-85C5-0CCCDB456C7D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9DD220C2-6B0D-4182-85C5-0CCCDB456C7D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9DD220C2-6B0D-4182-85C5-0CCCDB456C7D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E9829932-AADF-4FC8-89E0-C06E9E982A77}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E9829932-AADF-4FC8-89E0-C06E9E982A77}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E9829932-AADF-4FC8-89E0-C06E9E982A77}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E9829932-AADF-4FC8-89E0-C06E9E982A77}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B63FDB69-CD11-497F-80A3-346E7658D7B5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B63FDB69-CD11-497F-80A3-346E7658D7B5}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B63FDB69-CD11-497F-80A3-346E7658D7B5}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B63FDB69-CD11-497F-80A3-346E7658D7B5}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{0707DA68-7CDD-47CC-80CD-76221CE7DEAB} = {56D2A376-9C83-4145-926D-C7949B5C5C2A}
+		{9DD220C2-6B0D-4182-85C5-0CCCDB456C7D} = {56D2A376-9C83-4145-926D-C7949B5C5C2A}
+		{E9829932-AADF-4FC8-89E0-C06E9E982A77} = {56D2A376-9C83-4145-926D-C7949B5C5C2A}
+		{B63FDB69-CD11-497F-80A3-346E7658D7B5} = {56D2A376-9C83-4145-926D-C7949B5C5C2A}
+	EndGlobalSection
+EndGlobal

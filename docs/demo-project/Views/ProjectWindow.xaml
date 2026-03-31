@@ -1,0 +1,164 @@
+﻿<views:BaseWindow x:Class="Ofcas.Lk.Api.Client.Demo.Views.ProjectWindow"
+                  xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                  xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                  xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+                  xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+                  xmlns:i="http://schemas.microsoft.com/expression/2010/interactivity"
+                  xmlns:s="clr-namespace:System;assembly=mscorlib"
+                  xmlns:utils="clr-namespace:Ofcas.Lk.Api.Client.Demo.Utils"
+                  xmlns:viewModels="clr-namespace:Ofcas.Lk.Api.Client.Demo.ViewModels"
+                  xmlns:controls="clr-namespace:Ofcas.Lk.Api.Client.Demo.Controls"
+                  xmlns:views="clr-namespace:Ofcas.Lk.Api.Client.Demo.Views"
+                  xmlns:dc="clr-namespace:Ofcas.Lk.Api.Shared;assembly=Ofcas.Lk.Api.Shared"
+                  mc:Ignorable="d"
+                  d:DataContext="{d:DesignInstance viewModels:ProjectViewModel}"
+                  WindowStartupLocation="CenterScreen"
+                  Height="500"
+                  Width="450"
+                  Title="{Binding ProjectModel.Name, StringFormat='{}Project - {0}'}">
+    <Window.Resources>
+        <utils:ReorderChildModelConverter x:Key="ReorderChildModelConverter" />
+        <utils:BooleanToObjectConverter x:Key="TrueToVisible" TrueValue="{x:Static Visibility.Visible}"
+                                        FalseValue="{x:Static Visibility.Collapsed}" />
+        <s:Boolean x:Key="True">True</s:Boolean>
+        <s:Boolean x:Key="False">False</s:Boolean>
+    </Window.Resources>
+    <DockPanel>
+        <Menu DockPanel.Dock="Top">
+            <MenuItem Header="_Open" Name="Open">
+                <MenuItem Header="Select Elevation" Command="{Binding SelectElevationCommand}" />
+                <MenuItem Header="Show Elevations" Command="{Binding ShowElevationsAsyncCommand}" />
+            </MenuItem>
+            <MenuItem Header="_Edit">
+                <MenuItem Header="P_arts Lists (async)" Command="{Binding UpdatePartsListsAsyncCommand}" />
+                <MenuItem Header="_Find and Replace" Command="{Binding FindAndReplaceCommand}" />
+                <MenuItem Header="_Edit Elevations" Command="{Binding EditElevationsCommand}" />
+                <MenuItem Header="E_dit Elevations (Single)" Command="{Binding EditElevationsSingleValueCommand}" />
+                <MenuItem Header="_Copy Elevations" Command="{Binding CopyElevationsCommand}" />
+                <MenuItem Header="C_opy Elevations From Project" Command="{Binding CopyElevationsFromProjectCommand}" />
+                <MenuItem Header="_Set Estimation Data Set" Command="{Binding SetEstimationDataSetCommand}" />
+                <MenuItem Header="Collapsed (Phase)" Command="{Binding EditPhaseCollapsedCommand}"/>
+                <MenuItem Header="Collapsed (Elevation)" Command="{Binding EditElevationCollapsedCommand}"/>
+                <MenuItem Header="SelectedForReports" Command="{Binding EditElevationSelectedForReportsCommand}"/>
+            </MenuItem>
+            <MenuItem Header="_View" Name ="View">
+                <MenuItem Header="Addre_ssContainer" Command="{Binding OpenAddressContainerCommand}" />
+                <MenuItem Header="_Informations" Command="{Binding OpenProjectInformationContainerCommand}" />
+                <MenuItem Header="_Documents" Command="{Binding OpenDocumentsCommand}" />
+                <MenuItem Header="_Programs" Command="{Binding RunProgramCommand}" />
+                <MenuItem Header="R_eports (async)" Command="{Binding OpenReportAsyncCommand}" />
+                <MenuItem Header="_Version GUID" Command="{Binding ShowVersionGuidCommand}"/>
+                <MenuItem Header="_CoreObjectDetails" Command="{Binding ShowCoreObjectDetailsCommand}" />
+                <MenuItem Header="Es_timation Data Set" Command="{Binding ShowEstimationDataSetCommand}" />
+                <MenuItem Header="Collapsed (Phase)" Command="{Binding ShowPhaseCollapsedCommand}"/>
+                <MenuItem Header="Collapsed (Elevation)" Command="{Binding ShowElevationCollapsedCommand}"/>
+                <MenuItem Header="SelectedForReports" Command="{Binding ShowElevationSelectedForReportsCommand}"/>
+            </MenuItem>
+            <MenuItem Header="_Export" Name="ProjectExport">
+                <MenuItem Header="Reports _Ui" Command="{Binding GetReportCommand}" />
+                <MenuItem Header="Reports _Core" Command="{Binding GetReportCommandCore}" />
+                <MenuItem Header="_Reports (async Ui)" Command="{Binding GetReportAsyncCommand}" />
+                <MenuItem Header="_Glass" Command="{Binding SelectGlassCommand}" />
+            </MenuItem>
+            <MenuItem Header="_Synchronization">
+                <MenuItem Header="_Refresh" Command="{Binding ForceRefreshCommand}" />
+                <Separator />
+                <MenuItem Header="_Container" Command="{Binding OpenSynchronizationContainerCommand}" />
+            </MenuItem>
+            <MenuItem Header="_Tools">
+                <MenuItem Header="_Open In New Window" Command="{Binding OpenInNewWindowCommand}" />
+                <MenuItem Header="_Open Parent" Command="{Binding OpenParentProjectCenterCommand}" />
+            </MenuItem>
+        </Menu>
+
+        <Grid Margin="5">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition />
+            </Grid.RowDefinitions>
+
+            <Grid Grid.Row="0" IsSharedSizeScope="True">
+                <StackPanel Name="editFields">
+
+                    <GroupBox>
+                        <StackPanel>
+                            <controls:TextField Header="CoreObjectId" Text="{Binding ProjectModel.CoreObjectGuid, StringFormat='{}{0:D}'}" />
+                    <controls:TextField Header="CoreObject Disposed" Text="{Binding CoreObjectDisposed}" />
+                            <controls:TextField Header="Guid" Text="{Binding ProjectModel.Guid, StringFormat='{}{0:D}'}" />
+                            <controls:TextField Header="Name" Text="{Binding ProjectModel.Name}" 
+                                        EditCommand="{Binding EditCommand}" EditKey="{x:Static dc:WellKnownEditKey+Project.Name}" />
+                            <controls:TextField Header="Created" Text="{Binding ProjectModel.CreatedDate, StringFormat='{}{0:dddd, dd MMMM yyyy HH:mm:ss}'}" />
+                            <controls:TextField Header="Changed" Text="{Binding ProjectModel.LastChangeDate, StringFormat='{}{0:dddd, dd MMMM yyyy HH:mm:ss}'}" />
+                        </StackPanel>
+                    </GroupBox>
+                    <GroupBox Visibility="{Binding ProjectModel.IsProject, Converter={StaticResource TrueToVisible}}">
+                        <StackPanel>
+                            <controls:TextField Header="CustomerName" Text="{Binding ProjectModel.CustomerName}" />
+                            <controls:TextField Header="JobNumber" Text="{Binding ProjectModel.JobNumber}" 
+                                        EditCommand="{Binding EditCommand}" EditKey="{x:Static dc:WellKnownEditKey+Project.JobNumber}" />
+                            <controls:TextField Header="OfferNumber" Text="{Binding ProjectModel.OfferNumber}" 
+                                        EditCommand="{Binding EditCommand}" EditKey="{x:Static dc:WellKnownEditKey+Project.OfferNumber}" />
+                            <controls:TextField Header="Calculated" Text="{Binding ProjectModel.IsCalculated}" />
+                        </StackPanel>
+                    </GroupBox>
+                    <GroupBox Visibility="{Binding ProjectModel.IsFabricationLot, Converter={StaticResource TrueToVisible}}">
+                        <StackPanel>
+                            <controls:TextField Header="FabricationLotNumber" Text="{Binding ProjectModel.FabricationLotNumber}" />
+                            <controls:TextField Header="Status" Text="{Binding ProjectModel.Status.Name}" 
+                                        EditCommand="{Binding EditCommand}" EditKey="{x:Static dc:WellKnownEditKey+Project.Status}" />
+                            <controls:TextField Header="Provision Date" Text="{Binding ProjectModel.ProvisionDate}" />
+                        </StackPanel>
+                    </GroupBox>
+                </StackPanel>
+            </Grid>
+
+
+            <ListView Grid.Row="2"
+                      SelectionMode="Single"
+                      ItemsSource="{Binding Phases.ItemsSource}"
+                      SelectedItem="{Binding Phases.SelectedItem}"
+                      ToolTip="double-click to open - right-click for more">
+                <ListView.ContextMenu>
+                    <ContextMenu Name="RightClickContextMenu">
+                        <MenuItem Header="create (default)" Command="{Binding CreatePhaseCommand}" />
+                        <MenuItem Header="create (parameters)" Command="{Binding CreatePhaseWithParametersCommand}" />
+                        <MenuItem Header="delete" Command="{Binding DeletePhaseCommand}" CommandParameter="{Binding Phases.SelectedItem}" />
+                        <Separator />
+                        <MenuItem Header="paste" Command="{Binding PasteCommand}" />
+                        <MenuItem Header="paste (ui)" Command="{Binding PasteUiCommand}" />
+                        <MenuItem Header="reorder copy" Command="{Binding CopyPhaseForReorderCommand}"
+                                                        CommandParameter="{Binding Phases.SelectedItem}" />
+                        <MenuItem Header="reorder move above this" Command="{Binding ReorderPhaseCommand}" 
+                                  CommandParameter="{Binding Phases.SelectedItem, 
+                                                    Converter={StaticResource ReorderChildModelConverter}, 
+                                                    ConverterParameter={x:Static dc:ChildReorderBehavior.Above}}" />
+                        <MenuItem Header="reorder move below this" Command="{Binding ReorderPhaseCommand}" 
+                                  CommandParameter="{Binding Phases.SelectedItem, 
+                                                    Converter={StaticResource ReorderChildModelConverter}, 
+                                                    ConverterParameter={x:Static dc:ChildReorderBehavior.Under}}" />
+                        <Separator />
+                        <MenuItem Header="open all" Command="{Binding OpenAllPhasesCommand}" />
+                        <Separator />
+                        <MenuItem Header="add Project (UI)" Command="{Binding AddProjectCommand}" />
+                        <MenuItem Header="Change Elevation Assignments (UI)" Command="{Binding ChangeElevationAssignmentsCommand}" />
+                    </ContextMenu>
+                </ListView.ContextMenu>
+
+                <ListView.View>
+                    <GridView>
+                        <GridViewColumn Header="Name" Width="220" DisplayMemberBinding="{Binding Name}" />
+                        <GridViewColumn Header="Description" Width="100" DisplayMemberBinding="{Binding Description}" />
+                    </GridView>
+                </ListView.View>
+
+                <i:Interaction.Triggers>
+                    <i:EventTrigger EventName="MouseDoubleClick">
+                        <i:InvokeCommandAction Command="{Binding OpenPhaseCommand}"
+                                               CommandParameter="{Binding Phases.SelectedItem}" />
+                    </i:EventTrigger>
+                </i:Interaction.Triggers>
+            </ListView>
+        </Grid>
+    </DockPanel>
+</views:BaseWindow>

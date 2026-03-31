@@ -1,0 +1,56 @@
+﻿<views:BaseWindow x:Class="Ofcas.Lk.Api.Client.Demo.Views.ElementPricelistWindow"
+                  xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                  xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                  xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+                  xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+                  xmlns:viewModels="clr-namespace:Ofcas.Lk.Api.Client.Demo.ViewModels"
+                  xmlns:controls="clr-namespace:Ofcas.Lk.Api.Client.Demo.Controls"
+                  xmlns:utils="clr-namespace:Ofcas.Lk.Api.Client.Demo.Utils"
+                  xmlns:views="clr-namespace:Ofcas.Lk.Api.Client.Demo.Views"
+                  mc:Ignorable="d"
+                  d:DataContext="{d:DesignInstance viewModels:ElementPricelistViewModel}"
+                  WindowStartupLocation="CenterScreen"
+                  Height="400"
+                  Width="700"
+                  Title="{Binding ElementPricelistModel.Name, StringFormat='{}ElementPricelist - {0}'}">
+
+    <DockPanel>
+        <Menu DockPanel.Dock="Top">
+            <MenuItem Header="_View">
+                <MenuItem Header="_CoreObjectDetails" Command="{Binding ShowCoreObjectDetailsCommand}" />
+            </MenuItem>
+            <MenuItem Header="_Export">
+                <MenuItem Header="_Thumbnail" Command="{Binding ExportThumbnailCommand}" />
+            </MenuItem>
+        </Menu>
+
+        <Grid Margin="5">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="10" />
+                <RowDefinition />
+            </Grid.RowDefinitions>
+
+            <Grid Grid.Row="0" IsSharedSizeScope="True">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition />
+                    <ColumnDefinition Width="300" />
+                </Grid.ColumnDefinitions>
+
+                <StackPanel>
+                    <controls:TextField Header="CoreObjectId"
+                                        Text="{Binding ElementPricelistModel.CoreObjectId, StringFormat='{}{0:D}'}" />
+                    <controls:TextField Header="Guid"
+                                        Text="{Binding ElementPricelistModel.Guid, StringFormat='{}{0:D}'}" />
+                    <controls:TextField Header="Path" Text="{Binding ElementPricelistModel.Path}" />
+                    <controls:TextField Header="Name" Text="{Binding ElementPricelistModel.Name}" />
+                    <controls:TextField Header="System" Text="{Binding ElementPricelistModel.System}" />
+                </StackPanel>
+
+                <Grid Grid.Column="1" Margin="5" Height="300">
+                    <Image Source="{Binding ElementPricelistModel.Thumbnail}" />
+                </Grid>
+            </Grid>
+        </Grid>
+    </DockPanel>
+</views:BaseWindow>

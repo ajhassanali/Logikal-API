@@ -1,0 +1,128 @@
+﻿<views:BaseWindow x:Class="Ofcas.Lk.Api.Client.Demo.Views.PhaseWindow"
+                  xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                  xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                  xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+                  xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+                  xmlns:i="http://schemas.microsoft.com/expression/2010/interactivity"
+                  xmlns:viewModels="clr-namespace:Ofcas.Lk.Api.Client.Demo.ViewModels"
+                  xmlns:controls="clr-namespace:Ofcas.Lk.Api.Client.Demo.Controls"
+                  xmlns:utils="clr-namespace:Ofcas.Lk.Api.Client.Demo.Utils"
+                  xmlns:views="clr-namespace:Ofcas.Lk.Api.Client.Demo.Views"
+                  xmlns:dc="clr-namespace:Ofcas.Lk.Api.Shared;assembly=Ofcas.Lk.Api.Shared"
+                  mc:Ignorable="d"
+                  d:DataContext="{d:DesignInstance viewModels:PhaseViewModel}"
+                  WindowStartupLocation="CenterScreen"
+                  Height="400"
+                  Width="460"
+                  Title="{Binding PhaseModel.Name, StringFormat='{}Phase - {0}'}">
+
+    <Window.Resources>
+        <utils:ReorderChildModelConverter x:Key="ReorderChildModelConverter" />
+    </Window.Resources>
+
+    <DockPanel>
+        <Menu DockPanel.Dock="Top">
+            <MenuItem Header="_Edit">
+                <MenuItem Header="_Sort Elevations"
+                          Command="{Binding SortElevationsCommand}" />
+            </MenuItem>
+            <MenuItem Header="_View">
+                <MenuItem Header="_CoreObjectDetails" Command="{Binding ShowCoreObjectDetailsCommand}" />
+            </MenuItem>
+            <MenuItem Header="_Synchronization">
+                <MenuItem Header="_Refresh" Command="{Binding ForceRefreshCommand}" />
+                <Separator />
+                <MenuItem Header="_Container" Command="{Binding OpenSynchronizationContainerCommand}" />
+            </MenuItem>
+            <MenuItem Header="_Tools">
+                <MenuItem Header="_Open In New Window" Command="{Binding OpenInNewWindowCommand}" />
+            </MenuItem>
+        </Menu>
+
+        <Grid Margin="5">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="10" />
+                <RowDefinition />
+            </Grid.RowDefinitions>
+
+            <Grid Grid.Row="0" IsSharedSizeScope="True">
+                <StackPanel>
+                    <controls:TextField Header="CoreObjectId"
+                                        Text="{Binding PhaseModel.CoreObjectId, StringFormat='{}{0:D}'}" />
+                    <controls:TextField Header="CoreObject Disposed" Text="{Binding CoreObjectDisposed}" />
+                    <controls:TextField Header="Guid" Text="{Binding PhaseModel.Guid, StringFormat='{}{0:D}'}" />
+                    <controls:TextField Header="Name" Text="{Binding PhaseModel.Name}"
+                                        EditCommand="{Binding EditCommand}"
+                                        EditKey="{x:Static dc:WellKnownEditKey+Phase.Name}" />
+                    <controls:TextField Header="Description" Text="{Binding PhaseModel.Description}"
+                                        EditCommand="{Binding EditCommand}"
+                                        EditKey="{x:Static dc:WellKnownEditKey+Phase.Description}" />
+                </StackPanel>
+            </Grid>
+
+            <Separator Grid.Row="1" Height="2" />
+
+            <ListView Grid.Row="2"
+                      SelectionMode="Single"
+                      ItemsSource="{Binding Elevations.ItemsSource}"
+                      SelectedItem="{Binding Elevations.SelectedItem}"
+                      ToolTip="double-click to open - right-click more">
+                <ListView.ContextMenu>
+                    <ContextMenu Name="RightClickContextMenu">
+                        <MenuItem Header="create (default)" Command="{Binding CreateElevationCommand}" />
+                        <MenuItem Header="create (parameters)" Command="{Binding CreateElevationWithParametersCommand}" />
+                        <MenuItem Header="create (parameters + stream)" Command="{Binding CreateElevationWithParametersAndStreamCommand}" />
+                        <MenuItem Header="create (UI + async)" Command="{Binding CreateElevationAsyncCommand}" />
+                        <MenuItem Header="Import (History)" Command="{Binding ImportChildCommand}" />
+                        <MenuItem Header="delete" Command="{Binding DeleteElevationCommand}"
+                                  CommandParameter="{Binding Elevations.SelectedItem}" />
+                        <MenuItem Header="delete (multi)" Command="{Binding DeleteElevationsCommand}"/>
+                        <MenuItem Header="force delete" Command="{Binding ForceDeleteElevationCommand}"
+                                  CommandParameter="{Binding Elevations.SelectedItem}" />
+                        <MenuItem Header="force delete (multi)" Command="{Binding ForceDeleteElevationsCommand}"/>
+                        <Separator />
+                        <MenuItem Header="restore" Command="{Binding RestoreElevationCommand}"
+                                  CommandParameter="{Binding Elevations.SelectedItem}" />
+                        <Separator />
+                        <MenuItem Header="copy" Command="{Binding CopyElevationCommand}"
+                                  CommandParameter="{Binding Elevations.SelectedItem}" />
+                        <MenuItem Header="move" Command="{Binding MoveElevationCommand}" />
+                        <MenuItem Header="move (UI)" Command="{Binding MoveElevationUiCommand}" />
+                        <MenuItem Header="paste" Command="{Binding PasteElevationCommand}" />
+                        <MenuItem Header="paste (UI)" Command="{Binding PasteElevationUiCommand}" />
+                        <MenuItem Header="reorder move above this" Command="{Binding ReorderElevationCommand}" 
+                                  CommandParameter="{Binding Elevations.SelectedItem, 
+                                                    Converter={StaticResource ReorderChildModelConverter}, 
+                                                    ConverterParameter={x:Static dc:ChildReorderBehavior.Above}}" />
+                        <MenuItem Header="reorder move below this" Command="{Binding ReorderElevationCommand}" 
+                                  CommandParameter="{Binding Elevations.SelectedItem, 
+                                                    Converter={StaticResource ReorderChildModelConverter}, 
+                                                    ConverterParameter={x:Static dc:ChildReorderBehavior.Under}}" />
+                        <MenuItem Header="split" Command="{Binding SplitElevationCommand}"
+				                  CommandParameter="{Binding Elevations.SelectedItem}" />
+                        <Separator />
+                        <MenuItem Header="open all" Command="{Binding OpenAllElevationsCommand}" />
+                    </ContextMenu>
+                </ListView.ContextMenu>
+
+                <ListView.View>
+                    <GridView>
+                        <GridViewColumn Header="Name" Width="160" DisplayMemberBinding="{Binding Name}" />
+                        <GridViewColumn Header="IsInRecycleBin" Width="70" DisplayMemberBinding="{Binding IsInRecycleBin}" />
+                        <GridViewColumn Header="State" DisplayMemberBinding="{Binding State.Name}" />
+                        <GridViewColumn Header="Type"  Width="120" DisplayMemberBinding="{Binding Type.Name}" />
+                        <GridViewColumn Header="Type-Id"  Width="50" DisplayMemberBinding="{Binding Type.Id}" />
+                    </GridView>
+                </ListView.View>
+
+                <i:Interaction.Triggers>
+                    <i:EventTrigger EventName="MouseDoubleClick">
+                        <i:InvokeCommandAction Command="{Binding OpenElevationCommand}"
+                                               CommandParameter="{Binding Elevations.SelectedItem}" />
+                    </i:EventTrigger>
+                </i:Interaction.Triggers>
+            </ListView>
+        </Grid>
+    </DockPanel>
+</views:BaseWindow>

@@ -1,0 +1,28 @@
+﻿<UserControl x:Class="Ofcas.Lk.Api.Client.Demo.Controls.TextField"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:utils="clr-namespace:Ofcas.Lk.Api.Client.Demo.Utils"
+             x:Name="TextFieldControl">
+    <Grid>
+        <Grid.Resources>
+            <utils:NullToCollapsedConverter x:Key="NullToCollapsed" />
+        </Grid.Resources>
+
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition SharedSizeGroup="PropertyColumn" />
+            <ColumnDefinition Width="5" />
+            <ColumnDefinition />
+            <ColumnDefinition Width="Auto" />
+        </Grid.ColumnDefinitions>
+
+        <TextBlock Grid.Column="0" Margin="2"
+                   Text="{Binding Header, StringFormat='{}{0} ', ElementName=TextFieldControl, UpdateSourceTrigger=PropertyChanged}" />
+
+        <TextBox x:Name="TextFieldContent" Grid.Column="2" Margin="2" TextWrapping="Wrap" Style="{StaticResource TextField}"
+                 Text="{Binding Text, ElementName=TextFieldControl, UpdateSourceTrigger=PropertyChanged}" />
+
+        <Button Grid.Column="3" Margin="2" Width="70" Content="{Binding EditContent, ElementName=TextFieldControl, UpdateSourceTrigger=PropertyChanged}"
+                Visibility="{Binding EditCommand, ElementName=TextFieldControl, Converter={StaticResource NullToCollapsed}}"
+                Command="{Binding EditCommand, ElementName=TextFieldControl}" CommandParameter="{Binding EditKey, ElementName=TextFieldControl}" />
+    </Grid>
+</UserControl>

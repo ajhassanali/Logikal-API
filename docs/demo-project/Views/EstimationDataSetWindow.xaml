@@ -1,0 +1,28 @@
+﻿<views:BaseWindow x:Class="Ofcas.Lk.Api.Client.Demo.Views.EstimationDataSetWindow"
+                  xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                  xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                  xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+                  xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+                  xmlns:viewModels="clr-namespace:Ofcas.Lk.Api.Client.Demo.ViewModels"
+                  xmlns:views="clr-namespace:Ofcas.Lk.Api.Client.Demo.Views"
+                  xmlns:controls="clr-namespace:Ofcas.Lk.Api.Client.Demo.Controls"
+                  mc:Ignorable="d"
+                  d:DataContext="{d:DesignInstance viewModels:EstimationDataSetViewModel}"
+                  WindowStartupLocation="CenterScreen"
+                  Height="200"
+                  Width="370"
+                  Title="Estimation Data Set View">
+
+    <DockPanel>
+        <Grid Margin="5">
+            <Grid>
+                <StackPanel Name="editFields">
+                    <controls:TextField Header="MIME Key" Text="{Binding EstimationDataSet.Id}" />
+                    <controls:TextField Header="Name" Text="{Binding EstimationDataSet.Name}" />
+                    <controls:TextField Header="Default" Text="{Binding EstimationDataSet.IsDefault}" />
+                    <controls:TextField Header="Protected" Text="{Binding EstimationDataSet.IsProtected}" />
+                </StackPanel>
+            </Grid>
+        </Grid>
+    </DockPanel>
+</views:BaseWindow>

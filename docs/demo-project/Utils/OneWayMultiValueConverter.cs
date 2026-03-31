@@ -1,0 +1,16 @@
+﻿using System;
+using System.Globalization;
+using System.Windows.Data;
+
+namespace Ofcas.Lk.Api.Client.Demo.Utils
+{
+    public abstract class OneWayMultiValueConverter : IMultiValueConverter
+    {
+        public abstract object Convert(object[] values, Type targetType, object parameter, CultureInfo culture);
+
+        public object[] ConvertBack(object value, Type[] targetTypes, object parameter, CultureInfo culture)
+        {
+            throw new NotSupportedException("This is a one-way converter.");
+        }
+    }
+}

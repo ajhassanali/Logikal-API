@@ -1,0 +1,97 @@
+﻿<views:BaseWindow x:Class="Ofcas.Lk.Api.Client.Demo.Views.ExceptionDetailsWindow"
+                  xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                  xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                  xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+                  xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+                  xmlns:local="clr-namespace:Ofcas.Lk.Api.Client.Demo.Views"
+                  xmlns:viewModels="clr-namespace:Ofcas.Lk.Api.Client.Demo.ViewModels"
+                  xmlns:controls="clr-namespace:Ofcas.Lk.Api.Client.Demo.Controls"
+                  xmlns:utils="clr-namespace:Ofcas.Lk.Api.Client.Demo.Utils"
+                  xmlns:views="clr-namespace:Ofcas.Lk.Api.Client.Demo.Views"
+                  mc:Ignorable="d"
+                  d:DataContext="{d:DesignInstance viewModels:ExceptionDetailsViewModel}"
+                  WindowStartupLocation="CenterScreen"
+                  Height="500"
+                  Width="680"
+                  Title="Exception details">
+    <DockPanel>
+        <Grid Margin="5">
+
+            <Grid.RowDefinitions>
+                <RowDefinition Height="auto" />
+                <RowDefinition />
+            </Grid.RowDefinitions>
+
+            <Grid Grid.Row="0" IsSharedSizeScope="True">
+                <Grid.Resources>
+                    <utils:NullToCollapsedConverter x:Key="NullToCollapsed" />
+                </Grid.Resources>
+
+                <StackPanel>
+                    <controls:TextField Header="FullName" Text="{Binding ExceptionType.FullName}"
+                                        Visibility="{Binding ExceptionType, Converter={StaticResource NullToCollapsed}}" />
+                    <controls:TextField Header="Message" Text="{Binding Exception.Message}"
+                                        Visibility="{Binding Exception, Converter={StaticResource NullToCollapsed}}" />
+
+                    <controls:TextField Header="InternalMessage" Text="{Binding LastErrorInfo.InternalMessage}"
+                                        Visibility="{Binding LastErrorInfo.InternalMessage, Converter={StaticResource NullToCollapsed}}" />
+                    <controls:TextField Header="InternalExceptionType" Text="{Binding LastErrorInfo.InternalExceptionType}"
+                                        Visibility="{Binding LastErrorInfo.InternalExceptionType, Converter={StaticResource NullToCollapsed}}" />
+                    <controls:TextField Header="InteropMethod" Text="{Binding LastErrorInfo.InteropMethod}" 
+                                        Visibility="{Binding LastErrorInfo.InteropMethod, Converter={StaticResource NullToCollapsed}}" />
+                    <controls:TextField Header="DemoMethod" Text="{Binding CalledMethod}"
+                                        Visibility="{Binding LastErrorInfo.ServiceMethod, Converter={StaticResource NullToCollapsed}}" />
+                    <controls:TextField Header="ServiceMethod" Text="{Binding LastErrorInfo.ServiceMethod}" 
+                                        Visibility="{Binding LastErrorInfo.ServiceMethod, Converter={StaticResource NullToCollapsed}}" />
+                    <controls:TextField Header="ClientMethod" Text="{Binding LastErrorInfo.ClientMethod}" 
+                                        Visibility="{Binding LastErrorInfo.ClientMethod, Converter={StaticResource NullToCollapsed}}" />
+                    <controls:TextField Header="ExceptionCode" Text="{Binding LastErrorInfo.ExceptionCode}" 
+                                        Visibility="{Binding LastErrorInfo.ExceptionCode, Converter={StaticResource NullToCollapsed}}" />
+                    <controls:TextField Header="ProjectGuid" Text="{Binding LastErrorInfo.ProjectGuid}" 
+                                        Visibility="{Binding LastErrorInfo.ProjectGuid, Converter={StaticResource NullToCollapsed}}" />
+                    <controls:TextField Header="Code" Text="{Binding LastErrorInfo.Code}" 
+                                        Visibility="{Binding LastErrorInfo.Code, Converter={StaticResource NullToCollapsed}}" />
+                    <controls:TextField Header="Group" Text="{Binding LastErrorInfo.Group}" 
+                                        Visibility="{Binding LastErrorInfo.Group, Converter={StaticResource NullToCollapsed}}" />
+                    <controls:TextField Header="Data" Text="{Binding LastErrorInfo.Data}" 
+                                        Visibility="{Binding LastErrorInfo.Data, Converter={StaticResource NullToCollapsed}}" />
+                </StackPanel>
+            </Grid>
+            <Grid Grid.Row="1">
+                <TabControl ItemsSource="{Binding StackTraces}" SelectedIndex="0">
+                    <TabControl.Resources>
+                        <utils:BindingProxy x:Key="ViewModelBinding" Data="{Binding}" />
+                    </TabControl.Resources>
+                    <TabControl.ContentTemplate>
+                        <DataTemplate>
+                            <ListBox SelectionMode="Extended"
+                                     ItemsSource="{Binding ItemsSource}"
+                                     SelectedItem="{Binding SelectedItem}"
+                                     utils:MultiSelectorBehaviours.SynchronizedSelectedItems="{Binding SelectedItems, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                     utils:MultiSelectorBehaviours.OrderSelectedItems="True"
+                                     ScrollViewer.VerticalScrollBarVisibility="Visible">
+                                <ListBox.ContextMenu>
+                                    <ContextMenu>
+                                        <MenuItem Header="copy" 
+                                                  Command="{Binding Data.CopyEntriesCommand, Source={StaticResource ViewModelBinding}}"
+                                                  CommandParameter="{Binding SelectedItems}" />
+                                        <Separator />
+                                        <MenuItem Header="copy all" 
+                                                  Command="{Binding Data.CopyEntriesCommand, Source={StaticResource ViewModelBinding}}"
+                                                  CommandParameter="{Binding ItemsSource}" />
+                                    </ContextMenu>
+                                </ListBox.ContextMenu>
+                                <ListBox.InputBindings>
+                                    <KeyBinding Key="C" 
+                                                Modifiers="Control" 
+                                                Command="{Binding Data.CopyEntriesCommand, Source={StaticResource ViewModelBinding}}" 
+                                                CommandParameter="{Binding SelectedItems}" />
+                                </ListBox.InputBindings>
+                            </ListBox>
+                        </DataTemplate>
+                    </TabControl.ContentTemplate>
+                </TabControl>
+            </Grid>
+        </Grid>
+    </DockPanel>
+</views:BaseWindow>

@@ -1,0 +1,117 @@
+﻿<views:BaseWindow x:Class="Ofcas.Lk.Api.Client.Demo.Views.LoginWindow"
+                  xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                  xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                  xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+                  xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+                  xmlns:i="http://schemas.microsoft.com/expression/2010/interactivity"
+                  xmlns:viewModels="clr-namespace:Ofcas.Lk.Api.Client.Demo.ViewModels"
+                  xmlns:controls="clr-namespace:Ofcas.Lk.Api.Client.Demo.Controls"
+                  xmlns:utils="clr-namespace:Ofcas.Lk.Api.Client.Demo.Utils"
+                  xmlns:views="clr-namespace:Ofcas.Lk.Api.Client.Demo.Views"
+                  mc:Ignorable="d"
+                  Title="{Binding LoginWindowTitle}"
+                  Height="265"
+                  Width="370"
+                  WindowStartupLocation="CenterScreen"
+                  d:DataContext="{d:DesignInstance viewModels:LoginViewModel}">
+
+    <DockPanel>
+        <Menu DockPanel.Dock="Top" Name="Menu">
+            <MenuItem Header="_Open">
+                <MenuItem Header="_Project" Command="{Binding SelectProjectCommand}" />
+                <MenuItem Header="_Elevation" Command="{Binding SelectElevationCommand}" />
+                <MenuItem Header="P_rojectFromElevation" Command="{Binding OpenProjectFromElevationCommand}" />
+                <MenuItem Header="ProjectBy_Guid" Command="{Binding OpenProjectByGuidCommand}" />
+                <MenuItem Header="_Create Project" Command="{Binding CreateProjectCommand}" />
+            </MenuItem>
+            <MenuItem Header="_View">
+                <MenuItem Header="_Recent Projects" Command="{Binding ShowRecentProjectsCommand}" />
+                <MenuItem Header="Recent _FabricationLots" Command="{Binding ShowRecentFabricationLotsCommand}" />
+                <MenuItem Header="Recent C_AD Drawings" Command="{Binding ShowRecentCadDrawingsCommand}" />
+                <MenuItem Header="_Programs" Command="{Binding RunProgramCommand}" />
+                <MenuItem Header="_Settings" Command="{Binding OpenSettingsCommand}" />
+                <MenuItem Header="_Element Pricelists" Command="{Binding OpenElementPricelistContainer}" />
+                <MenuItem Header="P_rogramInformation" Command="{Binding OpenProgramInformationCommand}" />
+                <MenuItem Header="Pr_ogramRuntimeInformation" Command="{Binding OpenProgramRuntimeInformationCommand}" />
+                <MenuItem Header="_CoreObjectDetails" Command="{Binding ShowCoreObjectDetailsCommand}" />
+                <MenuItem Header="_Languages" Command="{Binding ShowLanguagesCommand}" />
+                <MenuItem Header="_UserInformation" Command="{Binding ShowUserInformationCommand}" />
+                <MenuItem Header="Pro_ject Search" Command="{Binding ShowSearchCommand}" />
+                <MenuItem Header="Ele_mentTypes" Command="{Binding ShowElementTypesCommand}" />
+                <MenuItem Header="Es_timation Data Sets" Command="{Binding ShowEstimationDataSetsCommand}" />
+            </MenuItem>
+            <MenuItem Header="_Export">
+                <MenuItem Header="_Database" Command="{Binding ExportDatabaseCommand}" />
+                <MenuItem Header="_Glass Price" Command="{Binding GetGlassPriceCommand}" />
+            </MenuItem>
+            <MenuItem Header="_Tools">
+                <MenuItem Header="_Clear demo user settings" Command="{Binding ClearDemoUserSettingsCommand}" />
+            </MenuItem>
+            <MenuItem Header="_Synchronization">
+                <MenuItem Header="_Container" Command="{Binding OpenSynchronizationContainerCommand}" />
+                <MenuItem Header="_Enable Event Synchronization" IsCheckable="True" IsChecked="{Binding EnableEventSynchronization, Mode=OneWay}" Command="{Binding EnableEventSynchronizationCommand}"/>
+            </MenuItem>
+        </Menu>
+
+        <Grid Margin="5">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="10" />
+                <RowDefinition />
+            </Grid.RowDefinitions>
+
+            <Grid Grid.Row="0" IsSharedSizeScope="True">
+                <StackPanel>
+                    <controls:TextInput x:Name="InstallationPathTextInput" Header="LauncherPath"
+                                        Text="{Binding EnvironmentModel.LauncherPath, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                        Entries="{Binding EnvironmentModel.RecentLauncherPathes}" />
+
+                    <controls:TextInput x:Name="ProgramModeTextInput" Header="ProgramMode"
+                                        Text="{Binding EnvironmentModel.ProgramMode, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                        Entries="{Binding EnvironmentModel.ProgramModes}" />
+                </StackPanel>
+            </Grid>
+
+            <Grid Grid.Row="1" IsSharedSizeScope="True">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition/>
+                    <ColumnDefinition/>
+                </Grid.ColumnDefinitions>
+                <Button Grid.Column="0" Height="25" Margin="5" Content="Login" IsDefault="True" Name="LoginButton"
+                    Command="{Binding LoginCommand}" />
+
+                <Button Grid.Column="1" Height="25" Margin="5" Content="Logout" IsDefault="True" Name="LogoutButton"
+                    Command="{Binding LogoutCommand}" />
+            </Grid>
+
+            <Separator Grid.Row="2" Height="2" />
+
+            <ListView Grid.Row="3"
+                      SelectionMode="Single"
+                      ItemsSource="{Binding ProjectCenters.ItemsSource}"
+                      SelectedItem="{Binding ProjectCenters.SelectedItem}"
+                      ToolTip="double-click to open">
+                <ListView.ContextMenu>
+                    <ContextMenu>
+                        <MenuItem Header="_Enums">
+                            <MenuItem Header="E_lementTypes" Command="{Binding ShowElementTypesCommand}" />
+                        </MenuItem>
+                    </ContextMenu>
+                </ListView.ContextMenu>
+                <ListView.View>
+                    <GridView>
+                        <GridViewColumn Header="Type" DisplayMemberBinding="{Binding Type.Id}" Width="50" />
+                        <GridViewColumn Header="Name" DisplayMemberBinding="{Binding Type.Name}" Width="150" />
+                    </GridView>
+                </ListView.View>
+                <i:Interaction.Triggers>
+                    <i:EventTrigger EventName="MouseDoubleClick">
+                        <i:InvokeCommandAction Command="{Binding OpenProjectCenterCommand}"
+                                               CommandParameter="{Binding ProjectCenters.SelectedItem}" />
+                    </i:EventTrigger>
+                </i:Interaction.Triggers>
+            </ListView>
+        </Grid>
+    </DockPanel>
+</views:BaseWindow>

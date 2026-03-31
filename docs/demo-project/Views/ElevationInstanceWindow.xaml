@@ -1,0 +1,52 @@
+﻿<views:BaseWindow x:Class="Ofcas.Lk.Api.Client.Demo.Views.ElevationInstanceWindow"
+                  xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                  xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                  xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+                  xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+                  xmlns:viewModels="clr-namespace:Ofcas.Lk.Api.Client.Demo.ViewModels"
+                  xmlns:controls="clr-namespace:Ofcas.Lk.Api.Client.Demo.Controls"
+                  xmlns:views="clr-namespace:Ofcas.Lk.Api.Client.Demo.Views"
+                  xmlns:utils="clr-namespace:Ofcas.Lk.Api.Client.Demo.Utils"
+                  xmlns:dc="clr-namespace:Ofcas.Lk.Api.Shared;assembly=Ofcas.Lk.Api.Shared"
+                  mc:Ignorable="d"
+                  d:DataContext="{d:DesignInstance viewModels:ElevationInstanceViewModel}"
+                  WindowStartupLocation="CenterScreen"
+                  Title="{Binding ElevationInstanceModel.Guid, StringFormat='{}Element - {0}'}"
+                  SizeToContent="Height"
+                  Width="370">
+
+    <DockPanel>
+        <Menu DockPanel.Dock="Top">
+            <MenuItem Header="_View">
+                <MenuItem Header="Documents" Command="{Binding OpenDocumentsCommand}" />
+                <MenuItem Header="_CoreObjectDetails" Command="{Binding ShowCoreObjectDetailsCommand}" />
+            </MenuItem>
+            <MenuItem Header="_Export">
+                <MenuItem Header="Element Drawing" Command="{Binding ExportDrawingCommand}" />
+            </MenuItem>
+            <MenuItem Header="_Synchronization">
+                <MenuItem Header="_Refresh" Command="{Binding ForceRefreshCommand}" />
+                <Separator />
+                <MenuItem Header="_Container" Command="{Binding OpenSynchronizationContainerCommand}" />
+            </MenuItem>
+            <MenuItem Header="_Tools">
+                <MenuItem Header="_Open In New Window" Command="{Binding OpenInNewWindowCommand}" />
+            </MenuItem>
+        </Menu>
+
+        <Grid Margin="5">
+            <Grid IsSharedSizeScope="True">
+                <StackPanel>
+                    <controls:TextField Header="CoreObjectId" Text="{Binding ElevationInstanceModel.CoreObjectId, StringFormat='{}{0:D}'}" />
+                    <controls:TextField Header="CoreObject Disposed" Text="{Binding CoreObjectDisposed}" />
+                    <controls:TextField Header="Guid" Text="{Binding ElevationInstanceModel.Guid, StringFormat='{}{0:D}'}" />
+                    <controls:TextField Header="Description" Text="{Binding ElevationInstanceModel.Description}" 
+                                        EditCommand="{Binding EditCommand}" EditKey="{x:Static dc:WellKnownEditKey+ElevationInstance.Description}" />
+                    <controls:TextField Header="LocationInObject" Text="{Binding ElevationInstanceModel.LocationInObject}" 
+                                        EditCommand="{Binding EditCommand}" EditKey="{x:Static dc:WellKnownEditKey+ElevationInstance.LocationInObject}" />
+                    <controls:TextField Header="FabricationLot" Text="{Binding ElevationInstanceModel.AssignedFabricationLot, StringFormat='{}{0:D}'}" />
+                </StackPanel>
+            </Grid>
+        </Grid>
+    </DockPanel>
+</views:BaseWindow>

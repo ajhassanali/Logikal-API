@@ -1,0 +1,63 @@
+﻿<views:BaseWindow x:Class="Ofcas.Lk.Api.Client.Demo.Views.DocumentWindow"
+                  xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                  xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+                  xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                  xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+                  xmlns:controls="clr-namespace:Ofcas.Lk.Api.Client.Demo.Controls"
+                  xmlns:viewModels="clr-namespace:Ofcas.Lk.Api.Client.Demo.ViewModels"
+                  xmlns:views="clr-namespace:Ofcas.Lk.Api.Client.Demo.Views"
+                  xmlns:system="clr-namespace:System;assembly=mscorlib"
+                  xmlns:dc="clr-namespace:Ofcas.Lk.Api.Shared;assembly=Ofcas.Lk.Api.Shared"
+                  mc:Ignorable="d"
+                  d:DataContext="{d:DesignInstance viewModels:DocumentViewModel}"
+                  WindowStartupLocation="CenterScreen"
+                  Title="{Binding DocumentModel.Guid, StringFormat='{}Document - {0}'}"
+                  SizeToContent="Height"
+                  Width="370">
+
+    <DockPanel>
+        <Menu DockPanel.Dock="Top">
+            <MenuItem Header="Edit">
+                <MenuItem Header="write with writeaccess" Command="{Binding WriteDocumentCommand}">
+                    <MenuItem.CommandParameter>
+                        <system:Boolean>True</system:Boolean>
+                    </MenuItem.CommandParameter>
+                </MenuItem>
+                <MenuItem Header="write without writeaccess" Command="{Binding WriteDocumentCommand}">
+                    <MenuItem.CommandParameter>
+                        <system:Boolean>False</system:Boolean>
+                    </MenuItem.CommandParameter>
+                </MenuItem>
+            </MenuItem>
+            <MenuItem Header="_View">
+                <MenuItem Header="read with writeaccess" Command="{Binding ReadDocumentCommand}">
+                    <MenuItem.CommandParameter>
+                        <system:Boolean>True</system:Boolean>
+                    </MenuItem.CommandParameter>
+                </MenuItem>
+                <MenuItem Header="read without writeaccess" Command="{Binding ReadDocumentCommand}">
+                    <MenuItem.CommandParameter>
+                        <system:Boolean>False</system:Boolean>
+                    </MenuItem.CommandParameter>
+                </MenuItem>
+                <MenuItem Header="_CoreObjectDetails" Command="{Binding ShowCoreObjectDetailsCommand}" />
+            </MenuItem>
+            <MenuItem Header="_Tools">
+                <MenuItem Header="_Open In New Window" Command="{Binding OpenInNewWindowCommand}" />
+            </MenuItem>
+        </Menu>
+
+        <Grid Margin="5">
+            <Grid IsSharedSizeScope="True">
+                <StackPanel>
+                    <controls:TextField Header="CoreObjectId" Text="{Binding DocumentModel.CoreObjectId, StringFormat='{}{0:D}'}" />
+                    <controls:TextField Header="Guid" Text="{Binding DocumentModel.Guid, StringFormat='{}{0:D}'}" />
+                    <controls:TextField Header="Display Name" Text="{Binding DocumentModel.DisplayName}" 
+                                        EditCommand="{Binding EditCommand}" EditKey="{x:Static dc:WellKnownEditKey+Document.Name}" />
+                    <controls:TextField Header="Suffix" Text="{Binding DocumentModel.Suffix}" />
+                    <controls:TextField Header="Uri" Text="{Binding DocumentModel.Uri}" />
+                </StackPanel>
+            </Grid>
+        </Grid>
+    </DockPanel>
+</views:BaseWindow>

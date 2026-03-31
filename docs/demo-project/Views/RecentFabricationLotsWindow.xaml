@@ -1,0 +1,45 @@
+﻿<views:BaseWindow x:Class="Ofcas.Lk.Api.Client.Demo.Views.RecentFabricationLotsWindow"
+                  xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                  xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                  xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+                  xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+                  xmlns:i="http://schemas.microsoft.com/expression/2010/interactivity"
+                  xmlns:viewModels="clr-namespace:Ofcas.Lk.Api.Client.Demo.ViewModels"
+                  xmlns:core="clr-namespace:Ofcas.Lk.Api.Client.Core;assembly=Ofcas.Lk.Api.Client.Core"
+                  xmlns:views="clr-namespace:Ofcas.Lk.Api.Client.Demo.Views"
+                  mc:Ignorable="d" d:DataContext="{d:DesignInstance viewModels:RecentFabricationLotsViewModel}"
+                  WindowStartupLocation="CenterScreen"
+                  Title="RecentFabricationLotsWindow" Height="320" Width="400">
+    <DockPanel>
+        <ListView x:Name="RecentFabricationLotsList"
+                  Margin="2,2,2,2"
+                  MinWidth="240"
+                  ItemsSource="{Binding FabricationLotInfos}"
+                  ToolTip="Double-click to open the FabricationLot">
+            <i:Interaction.Triggers>
+                <i:EventTrigger EventName="MouseDoubleClick">
+                    <i:InvokeCommandAction Command="{Binding OpenFabricationLotCommand}"
+                                           CommandParameter="{Binding ElementName=RecentFabricationLotsList, Path=SelectedItem}" />
+                </i:EventTrigger>
+            </i:Interaction.Triggers>
+            <ListView.View>
+                <GridView>
+                    <GridViewColumn Header="Number">
+                        <GridViewColumn.CellTemplate>
+                            <DataTemplate DataType="core:ProjectInfo">
+                                <TextBlock Text="{Binding Name}" />
+                            </DataTemplate>
+                        </GridViewColumn.CellTemplate>
+                    </GridViewColumn>
+                    <GridViewColumn Header="Path">
+                        <GridViewColumn.CellTemplate>
+                            <DataTemplate DataType="core:ProjectInfo">
+                                <TextBlock Text="{Binding Path}" />
+                            </DataTemplate>
+                        </GridViewColumn.CellTemplate>
+                    </GridViewColumn>
+                </GridView>
+            </ListView.View>
+        </ListView>
+    </DockPanel>
+</views:BaseWindow>

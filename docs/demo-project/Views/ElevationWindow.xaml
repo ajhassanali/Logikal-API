@@ -1,0 +1,318 @@
+﻿<views:BaseWindow x:Class="Ofcas.Lk.Api.Client.Demo.Views.ElevationWindow"
+                  xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                  xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                  xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+                  xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+                  xmlns:i="http://schemas.microsoft.com/expression/2010/interactivity"
+                  xmlns:viewModels="clr-namespace:Ofcas.Lk.Api.Client.Demo.ViewModels"
+                  xmlns:controls="clr-namespace:Ofcas.Lk.Api.Client.Demo.Controls"
+                  xmlns:utils="clr-namespace:Ofcas.Lk.Api.Client.Demo.Utils"
+                  xmlns:models="clr-namespace:Ofcas.Lk.Api.Client.Demo.Models"
+                  xmlns:s="clr-namespace:System;assembly=mscorlib"
+                  xmlns:views="clr-namespace:Ofcas.Lk.Api.Client.Demo.Views"
+                  xmlns:dc="clr-namespace:Ofcas.Lk.Api.Shared;assembly=Ofcas.Lk.Api.Shared"
+                  mc:Ignorable="d"
+                  d:DataContext="{d:DesignInstance viewModels:ElevationViewModel}"
+                  WindowStartupLocation="CenterScreen"
+                  Height="950"
+                  Width="800"
+                  Title="{Binding ElevationModel.Name, StringFormat='{}Elevation - {0}'}">
+
+    <Window.Resources>
+        <utils:BooleanToObjectConverter x:Key="TrueToVisible" TrueValue="{x:Static Visibility.Visible}"
+                                        FalseValue="{x:Static Visibility.Collapsed}" />
+        <s:Boolean x:Key="True">True</s:Boolean>
+        <s:Boolean x:Key="False">False</s:Boolean>
+    </Window.Resources>
+
+    <DockPanel>
+        <Menu DockPanel.Dock="Top" Name="Menu">
+            <MenuItem Header="_Edit">
+                <MenuItem Header="_Show" Command="{Binding ShowAsyncCommand}" CommandParameter="{StaticResource False}" />
+                <MenuItem Header="Show (Default)" Command="{Binding ShowAsyncCommand}" CommandParameter="{StaticResource True}" />
+                <MenuItem Header="Show (Stream)" Command="{Binding ShowAsyncWithStreamCommand}" />
+                <MenuItem Header="Edit in UI mode" IsCheckable="True" IsChecked="{Binding UseUiMode}" />
+            </MenuItem>
+            <MenuItem Header="_View">
+                <MenuItem Header="_Documents" Command="{Binding OpenDocumentsCommand}" />
+                <MenuItem Header="_Calculation Price" Command="{Binding ShowCalculationPriceCommand}" />
+                <MenuItem Header="_Quotation Price" Command="{Binding ShowQuotationPriceCommand}" />
+                <MenuItem Header="Q_uotation Texts" Command="{Binding ShowQuotationTextsCommand}" />
+                <MenuItem Header="C_omments" Command="{Binding ShowCommentsCommand}" />
+                <MenuItem Header="_Elevation History" Command="{Binding ShowElevationHistoryCommand}" />
+                <MenuItem Header="_CoreObjectDetails" Command="{Binding ShowCoreObjectDetailsCommand}" />
+            </MenuItem>
+            <MenuItem Header="_Import">
+                <MenuItem Header="_Machinings" Command="{Binding InsertMachiningsCommand}" />
+            </MenuItem>
+            <MenuItem Header="_Export">
+                <MenuItem Header="_3D" Command="{Binding Export3DCommand}" />
+                <MenuItem Header="_GDZ" Command="{Binding ExportGdzCommand}" />
+                <MenuItem Header="_Parts List" Command="{Binding ExportPartsListCommand}" />
+                <MenuItem Header="_Thumbnail" Command="{Binding ExportThumbnailCommand}" />
+                <MenuItem Header="_Drawings">
+                    <MenuItem Header="_Elevation" Command="{Binding ExportElevationDrawingCommand}" />
+                    <MenuItem Header="_Section" Command="{Binding ExportSectionDrawingCommand}" />
+                    <MenuItem Header="Elevation With Section _Lines" Command="{Binding ExportElevationWithSectionLinesDrawingCommand}" />
+                    <MenuItem Header="E_xplosion" Command="{Binding ExportExplosionDrawingCommand}" />
+                    <MenuItem Header="Section L_ine" Command="{Binding ExportSectionLineDrawingCommand}" />
+                    <MenuItem Header="Section Lines (_Ui)" Command="{Binding ExportCrossSectionDrawingsCommand}" />
+                </MenuItem>
+                <MenuItem Header="Ex_port Information" Command="{Binding GetInformationCommand}" />
+            </MenuItem>
+            <MenuItem Header="_Synchronization">
+                <MenuItem Header="_Refresh" Command="{Binding ForceRefreshCommand}" />
+                <Separator />
+                <MenuItem Header="_Container" Command="{Binding OpenSynchronizationContainerCommand}" />
+            </MenuItem>
+            <MenuItem Header="_Tools">
+                <MenuItem Header="_Open In New Window" Command="{Binding OpenInNewWindowCommand}" />
+            </MenuItem>
+        </Menu>
+
+        <Grid Margin="5">
+
+            <Grid.Resources>
+                <Style TargetType="GroupBox">
+                    <Setter Property="Padding" Value="0,7,0,0"></Setter>
+                </Style>
+            </Grid.Resources>
+
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="10" />
+                <RowDefinition />
+            </Grid.RowDefinitions>
+
+            <Grid Grid.Row="0" IsSharedSizeScope="True">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition />
+                    <ColumnDefinition Width="300" />
+                </Grid.ColumnDefinitions>
+
+                <StackPanel>
+                    <GroupBox>
+                        <StackPanel>
+                            <controls:TextField Header="CoreObjectId"
+                                                Text="{Binding ElevationModel.CoreObjectId, StringFormat='{}{0:D}'}" />
+                            <controls:TextField Header="CoreObject Disposed" Text="{Binding CoreObjectDisposed}" />
+                            <controls:TextField Header="Guid"
+                                                Text="{Binding ElevationModel.Guid, StringFormat='{}{0:D}'}" />
+                            <controls:TextField Header="VersionGuid"
+                                                Text="{Binding ElevationModel.VersionGuid, StringFormat='{}{0:D}'}" />
+                            <controls:TextField Header="Created"
+                                                Text="{Binding ElevationModel.CreatedDate, StringFormat='{}{0:dddd, dd MMMM yyyy HH:mm:ss}'}" />
+                            <controls:TextField Header="Changed"
+                                                Text="{Binding ElevationModel.ChangedDate, StringFormat='{}{0:dddd, dd MMMM yyyy HH:mm:ss}'}" />
+                        </StackPanel>
+                    </GroupBox>
+
+                    <GroupBox>
+                        <StackPanel>
+                            <controls:TextField Header="State"
+                                                Text="{Binding ElevationModel.State.Name}" />
+                            <controls:TextField Header="Name" Text="{Binding ElevationModel.Name}"
+                                                EditCommand="{Binding EditCommand}"
+                                                EditKey="{x:Static dc:WellKnownEditKey+Elevation.Name}" />
+                            <controls:TextField Header="ElementType"
+                                                Text="{Binding ElevationModel.ElementType, StringFormat={}{0}}"
+                                                EditCommand="{Binding EditCommand}"
+                                                EditKey="{x:Static dc:WellKnownEditKey+Elevation.ElementType}" />
+                            <controls:TextField Header="Amount"
+                                                Text="{Binding ElevationModel.Amount}"
+                                                EditCommand="{Binding EditCommand}"
+                                                EditKey="{x:Static dc:WellKnownEditKey+Elevation.Amount}" />
+                            <controls:TextField Header="ProcessingStatus"
+                                                Text="{Binding ElevationModel.ProcessingStatus, StringFormat={}{0}}"
+                                                EditCommand="{Binding EditCommand}"
+                                                EditKey="{x:Static dc:WellKnownEditKey+Elevation.ProcessingStatus}" />
+                            <controls:TextField Header="IsAlternative"
+                                                Text="{Binding ElevationModel.IsAlternative}"
+                                                EditCommand="{Binding EditCommand}"
+                                                EditKey="{x:Static dc:WellKnownEditKey+Elevation.Alternative}" />
+                            <controls:TextField Header="UserDescription"
+                                                Text="{Binding ElevationModel.UserDescription}"
+                                                EditCommand="{Binding EditCommand}"
+                                                EditKey="{x:Static dc:WellKnownEditKey+Elevation.UserDescription}" />
+                            <controls:TextField Header="ModelDescription"
+                                                Text="{Binding ElevationModel.ModelDescription}" 
+                                                EditCommand="{Binding EditCommand}"
+                                                EditKey="{x:Static dc:WellKnownEditKey+Elevation.ModelDescription}" />
+                            <controls:TextField Header="SystemDescription"
+                                                Text="{Binding ElevationModel.SystemDescription}" />
+                            <controls:TextField Header="AutomaticDescription"
+                                                Text="{Binding ElevationModel.AutomaticDescription}" />
+                            <controls:TextField Header="CreatedByUser"
+                                                Text="{Binding ElevationModel.CreatedByUser}" />
+                            <controls:TextField Header="ChangedByUser"
+                                                Text="{Binding ElevationModel.ChangedByUser}" />
+                            <controls:TextField Header="Comment"
+                                                Text="{Binding ElevationModel.Comment}" />
+                            <controls:TextField Header="WarningLevel"
+                                                Text="{Binding ElevationModel.WarningLevel, StringFormat={}{0}}" />
+                            <controls:TextField Header="Elevation Warnings"
+                                                Text="{Binding ElevationModel.ElevationWarningsCount}"
+                                                EditCommand="{Binding ShowElevationWarningsCommand}"
+                                                EditContent="Show" />
+                            <controls:TextField Header="IsIncludedInEPD"
+                                                Text="{Binding ElevationModel.IsIncludedInEPD}" />
+                        </StackPanel>
+                    </GroupBox>
+
+                    <GroupBox Visibility="{Binding ElevationModel.IsStandardElevation, Converter={StaticResource TrueToVisible}}">
+                        <StackPanel>
+                            <controls:TextField Header="Width"
+                                                Text="{Binding ElevationModel.Width}" />
+                            <controls:TextField Header="Height"
+                                                Text="{Binding ElevationModel.Height}" />
+                            <controls:TextField Header="UValue"
+                                                Text="{Binding ElevationModel.UValue}" />
+                            <controls:TextField Header="Surface Base"
+                                                Text="{Binding ElevationModel.SurfaceBaseName}"
+                                                Visibility="{Binding ElevationModel.IsStandardElevation, Converter={StaticResource TrueToVisible}}" />
+                            <controls:TextField Header="Surface Base Colors"
+                                                Text="{Binding ElevationModel.SurfaceBaseColors}"
+                                                Visibility="{Binding ElevationModel.IsStandardElevation, Converter={StaticResource TrueToVisible}}" />
+                            <controls:TextField Header="Surface Frame"
+                                                Text="{Binding ElevationModel.SurfaceFrameName}"
+                                                Visibility="{Binding ElevationModel.IsStandardElevation, Converter={StaticResource TrueToVisible}}" />
+                            <controls:TextField Header="Surface Frame Colors"
+                                                Text="{Binding ElevationModel.SurfaceFrameColors}"
+                                                Visibility="{Binding ElevationModel.IsStandardElevation, Converter={StaticResource TrueToVisible}}" />
+                        </StackPanel>
+                    </GroupBox>
+
+                    <GroupBox Visibility="{Binding ElevationModel.IsTextElevation, Converter={StaticResource TrueToVisible}}">
+                        <StackPanel>
+                            <controls:TextField Header="Unit" Text="{Binding ElevationModel.Unit}"
+                                                Visibility="{Binding ElevationModel.IsTextElevation, Converter={StaticResource TrueToVisible}}" />
+                        </StackPanel>
+                    </GroupBox>
+
+                    <GroupBox Visibility="{Binding ElevationModel.IsSubSectionElevation, Converter={StaticResource TrueToVisible}}">
+                        <StackPanel>
+                            <controls:TextField Header="Main Elevation Guid"
+                                                Text="{Binding ElevationModel.MainGuid, StringFormat='{}{0:D}'}" />
+                        </StackPanel>
+                    </GroupBox>
+
+                    <GroupBox Visibility="{Binding ElevationModel.IsElementPricelistElevation, Converter={StaticResource TrueToVisible}}">
+                        <StackPanel>
+                            <controls:TextField Header="ElementPricelistGuid"
+                                                Text="{Binding ElevationModel.ElementPricelistGuid}"
+                                                EditCommand="{Binding EditCommand}"
+                                                EditKey="{x:Static dc:WellKnownEditKey+Elevation.ElementPricelistGuid}" />
+                        </StackPanel>
+                    </GroupBox>
+                </StackPanel>
+
+                <Grid Grid.Column="1" Margin="5" Height="300">
+                    <Image Source="{Binding ElevationModel.Thumbnail}"
+                           ToolTip="double-click to show modal - right-click for more">
+                        <Image.ContextMenu>
+                            <ContextMenu>
+                                <MenuItem Header="Show Modal" Command="{Binding ShowModalCommand}" />
+                                <MenuItem Header="Show" Command="{Binding ShowAsyncCommand}" />
+                            </ContextMenu>
+                        </Image.ContextMenu>
+                        <Image.InputBindings>
+                            <MouseBinding MouseAction="LeftDoubleClick" Command="{Binding ShowModalCommand}" CommandParameter="{StaticResource True}" />
+                        </Image.InputBindings>
+                    </Image>
+                </Grid>
+            </Grid>
+
+            <Separator Grid.Row="1" Height="2" />
+
+            <Grid Grid.Row="2">
+                <Grid.Resources>
+                    <DataTemplate x:Key="UndefinedElevation" />
+
+                    <DataTemplate x:Key="StandardElevation" DataType="models:ElevationModel">
+                        <ListView SelectionMode="Single"
+                                  ItemsSource="{Binding Parent.ElevationInstances.ItemsSource}"
+                                  SelectedItem="{Binding Parent.ElevationInstances.SelectedItem}"
+                                  ToolTip="double-click to open - right-click for more">
+                            <ListView.ContextMenu>
+                                <ContextMenu>
+                                    <MenuItem Header="create" Command="{Binding Parent.CreateChildCommand}" />
+                                    <MenuItem Header="create (n)"
+                                              Command="{Binding Parent.CreateChildrenCommand}" />
+                                    <MenuItem Header="delete" Command="{Binding Parent.DeleteChildCommand}"
+                                              CommandParameter="{Binding Parent.ElevationInstances.SelectedItem}" />
+                                    <Separator />
+                                    <MenuItem Header="copy" Command="{Binding Parent.CopyElevationInstanceCommand}"
+                                              CommandParameter="{Binding Parent.ElevationInstances.SelectedItem}" />
+                                </ContextMenu>
+                            </ListView.ContextMenu>
+
+                            <ListView.View>
+                                <GridView>
+                                    <GridViewColumn Header="Guid" DisplayMemberBinding="{Binding Guid}" Width="250" />
+                                    <GridViewColumn Header="Description" DisplayMemberBinding="{Binding Description}" />
+                                </GridView>
+                            </ListView.View>
+
+                            <i:Interaction.Triggers>
+                                <i:EventTrigger EventName="MouseDoubleClick">
+                                    <i:InvokeCommandAction Command="{Binding Parent.OpenChildCommand}"
+                                                           CommandParameter="{Binding Parent.ElevationInstances.SelectedItem}" />
+                                </i:EventTrigger>
+                            </i:Interaction.Triggers>
+                        </ListView>
+                    </DataTemplate>
+
+                    <DataTemplate x:Key="TextElevation" DataType="models:ElevationModel">
+
+                        <RichTextBox Margin="5" IsReadOnly="True" ScrollViewer.VerticalScrollBarVisibility="Auto"
+                                     utils:RichtTextBoxExtensions.ContentStream="{Binding RtfContent}" />
+                    </DataTemplate>
+
+                    <DataTemplate x:Key="MaterialElevation" DataType="models:ElevationModel">
+                        <StackPanel>
+                            <ContentControl ContentTemplate="{StaticResource TextElevation}" Content="{Binding}" />
+                            <ContentControl ContentTemplate="{StaticResource StandardElevation}" Content="{Binding}" />
+                        </StackPanel>
+                    </DataTemplate>
+
+                    <DataTemplate x:Key="InsertionElevation" DataType="models:ElevationModel">
+                        <StackPanel>
+                            <ContentControl ContentTemplate="{StaticResource StandardElevation}" Content="{Binding}" />
+                        </StackPanel>
+                    </DataTemplate>
+
+                    <DataTemplate x:Key="BaseElementElevation" DataType="models:ElevationModel">
+                        <StackPanel>
+                            <ContentControl ContentTemplate="{StaticResource StandardElevation}" Content="{Binding}" />
+                        </StackPanel>
+                    </DataTemplate>
+
+                    <DataTemplate x:Key="SegmentElevation" DataType="models:ElevationModel">
+                        <StackPanel>
+                            <ContentControl ContentTemplate="{StaticResource StandardElevation}" Content="{Binding}" />
+                        </StackPanel>
+                    </DataTemplate>
+
+                    <DataTemplate x:Key="LayerElevation" DataType="models:ElevationModel">
+                        <StackPanel>
+                            <ContentControl ContentTemplate="{StaticResource StandardElevation}" Content="{Binding}" />
+                        </StackPanel>
+                    </DataTemplate>
+
+                    <utils:ElevationTemplateSelector x:Key="ElevationTemplateSelector"
+                                                     UndefinedElevation="{StaticResource UndefinedElevation}"
+                                                     StandardElevation="{StaticResource StandardElevation}"
+                                                     TextElevation="{StaticResource TextElevation}"
+                                                     MaterialElevation="{StaticResource MaterialElevation}"
+                                                     InsertionElevation="{StaticResource InsertionElevation}"
+                                                     BaseElementElevation="{StaticResource BaseElementElevation}"
+                                                     LayerElevation="{StaticResource LayerElevation}"
+                                                     SegmentElevation="{StaticResource SegmentElevation}" />
+                </Grid.Resources>
+
+                <ContentControl Content="{Binding ElevationModel}"
+                                ContentTemplateSelector="{StaticResource ElevationTemplateSelector}" />
+            </Grid>
+        </Grid>
+    </DockPanel>
+</views:BaseWindow>

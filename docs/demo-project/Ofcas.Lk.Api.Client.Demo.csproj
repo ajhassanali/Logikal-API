@@ -1,0 +1,14 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>winexe</OutputType>
+    <TargetFramework>net452</TargetFramework>
+    <UseWpf>true</UseWpf>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="System.Configuration" />
+
+    <PackageReference Include="Expression.Blend.Sdk" Version="1.0.2" />
+    <PackageReference Include="System.ValueTuple" Version="4.4.0" />
+	<PackageReference Include="Ofcas.Lk.Api.Client.Ui" Version="3.0.2.8" />
+  </ItemGroup>
+</Project>
