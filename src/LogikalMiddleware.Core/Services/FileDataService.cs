@@ -10,6 +10,7 @@ public class FileDataService : IFileDataService
 {
     private readonly ILogger<FileDataService> _logger;
     private readonly string _dirsPath;
+    private readonly HashSet<string>? _centerFilter;
 
     public FileDataService(ILogger<FileDataService> logger, IOptions<LogikalSettings> settings)
     {
@@ -18,6 +19,15 @@ public class FileDataService : IFileDataService
         // Derive data directory from LauncherPath: {parent}/objekte/DIRS
         var launcherDir = Path.GetDirectoryName(settings.Value.LauncherPath) ?? @"D:\LOGIKAL\LOGIKAL";
         _dirsPath = Path.Combine(launcherDir, "objekte", "DIRS");
+
+        // Parse optional project center filter
+        if (!string.IsNullOrWhiteSpace(settings.Value.ProjectCenterFilter))
+        {
+            _centerFilter = new HashSet<string>(
+                settings.Value.ProjectCenterFilter.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries),
+                StringComparer.OrdinalIgnoreCase);
+            _logger.LogInformation("FileDataService filtering to centers: {Centers}", settings.Value.ProjectCenterFilter);
+        }
 
         _logger.LogInformation("FileDataService initialized with data path: {Path}", _dirsPath);
     }
@@ -35,6 +45,11 @@ public class FileDataService : IFileDataService
         foreach (var centerDir in Directory.GetDirectories(_dirsPath))
         {
             var centerName = Path.GetFileName(centerDir);
+
+            // Skip centers not in the filter (if filter is set)
+            if (_centerFilter != null && !_centerFilter.Contains(centerName))
+                continue;
+
             ScanForProjects(centerDir, centerName, projects);
 
             // Also scan QUOTATION subfolder if it exists
