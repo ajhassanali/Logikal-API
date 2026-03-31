@@ -24,6 +24,7 @@ namespace LogikalMiddleware.Bridge
         static readonly object Lock = new object();
         static string _launcherPath = @"D:\LOGIKAL\LOGIKAL\winstart.exe";
         static string _programMode = "BIM";
+        static string _centerFilter = null; // Comma-separated center names to search (null = all)
         static Form _hiddenForm;
         static IntPtr _windowHandle;
 
@@ -35,6 +36,11 @@ namespace LogikalMiddleware.Bridge
             _launcherPath = args.Length > 0 ? args[0] : _launcherPath;
             var port = args.Length > 1 ? int.Parse(args[1]) : 5100;
             _programMode = args.Length > 2 ? args[2] : _programMode;
+
+            // Optional 4th arg: center filter (comma-separated)
+            _centerFilter = args.Length > 3 ? args[3] : Environment.GetEnvironmentVariable("LOGIKAL_CENTER_FILTER");
+            if (!string.IsNullOrWhiteSpace(_centerFilter))
+                Console.WriteLine("[Bridge] Center filter: " + _centerFilter);
 
             var binPath = Path.Combine(Path.GetDirectoryName(_launcherPath), "bin");
 
@@ -573,11 +579,29 @@ namespace LogikalMiddleware.Bridge
             var centersInfos = centersInfosProp.GetValue(_loginScope) as IEnumerable;
             if (centersInfos == null) throw new Exception("No project centers");
 
+            // Parse center filter into a set for fast lookup
+            HashSet<string> allowedCenters = null;
+            if (!string.IsNullOrWhiteSpace(_centerFilter))
+            {
+                allowedCenters = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+                foreach (var c in _centerFilter.Split(','))
+                    if (!string.IsNullOrWhiteSpace(c)) allowedCenters.Add(c.Trim());
+            }
+
             foreach (var centerInfo in centersInfos)
             {
                 var isRecycleBinProp = centerInfo.GetType().GetProperty("IsRecycleBin");
                 if (isRecycleBinProp != null && (bool)isRecycleBinProp.GetValue(centerInfo))
                     continue;
+
+                // Skip centers not in the filter
+                if (allowedCenters != null)
+                {
+                    var dirNameProp = centerInfo.GetType().GetProperty("DirectoryName");
+                    var dirName = dirNameProp != null ? dirNameProp.GetValue(centerInfo)?.ToString() ?? "" : "";
+                    if (!allowedCenters.Contains(dirName))
+                        continue;
+                }
 
                 object centerResult = null;
                 try

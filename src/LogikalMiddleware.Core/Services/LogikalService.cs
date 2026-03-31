@@ -70,7 +70,9 @@ public class LogikalService : ILogikalService, IDisposable
             StartInfo = new ProcessStartInfo
             {
                 FileName = bridgePath,
-                Arguments = $"\"{_settings.LauncherPath}\" {_bridgePort}",
+                Arguments = string.IsNullOrWhiteSpace(_settings.ProjectCenterFilter)
+                    ? $"\"{_settings.LauncherPath}\" {_bridgePort}"
+                    : $"\"{_settings.LauncherPath}\" {_bridgePort} BIM \"{_settings.ProjectCenterFilter}\"",
                 UseShellExecute = false,
                 RedirectStandardOutput = true,
                 RedirectStandardError = true,
