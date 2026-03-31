@@ -256,7 +256,12 @@ public class FileDataService : IFileDataService
     /// </summary>
     private static XDocument? LoadXml(string path)
     {
-        var bytes = File.ReadAllBytes(path);
+        byte[] bytes;
+        using (var fs = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+        {
+            bytes = new byte[fs.Length];
+            fs.Read(bytes, 0, bytes.Length);
+        }
         if (bytes.Length == 0) return null;
 
         // Detect UTF-16 LE BOM (FF FE) or UTF-16 BE BOM (FE FF)
